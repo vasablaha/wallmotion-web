@@ -65,12 +65,34 @@ export default function HomePage() {
   ]
 
 
-
   const handlePurchase = async () => {
-    // Stripe integration will go here
-    console.log('Initiating Stripe checkout...')
-    // For now, redirect to a checkout URL
-    window.open('https://buy.stripe.com/your-payment-link', '_blank')
+    try {
+      console.log('Starting Stripe checkout...')
+      
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID, // Your Stripe Price ID
+        }),
+      })
+
+      const { sessionId } = await response.json()
+
+      // Redirect to Stripe Checkout
+      const stripe = await import('@stripe/stripe-js').then(module => 
+        module.loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+      )
+      
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId })
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Something went wrong. Please try again.')
+    }
   }
 
   return (
