@@ -25,19 +25,19 @@ export default function Register() {
 
     // Basic validation
     if (!email || !password) {
-      setError('Email a heslo jsou povinné')
+      setError('Email and password are required')
       setLoading(false)
       return
     }
 
     if (!amplifyReady) {
-      setError('Systém se načítá, zkuste to za chvilku')
+      setError('System is loading, please try again in a moment')
       setLoading(false)
       return
     }
 
     if (password.length < 8) {
-      setError('Heslo musí mít minimálně 8 znaků')
+      setError('Password must be at least 8 characters long')
       setLoading(false)
       return
     }
@@ -45,7 +45,7 @@ export default function Register() {
     try {
       await signUp(email, password)
       setNeedsConfirmation(true)
-      setSuccess('Registrace úspěšná! Zkontrolujte email pro ověřovací kód.')
+      setSuccess('Registration successful! Check your email for verification code.')
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string }
       console.error('Registration error:', error)
@@ -53,16 +53,16 @@ export default function Register() {
       // Handle specific Cognito errors
       switch (err.code) {
         case 'UsernameExistsException':
-          setError('Účet s tímto emailem již existuje')
+          setError('An account with this email already exists')
           break
         case 'InvalidPasswordException':
-          setError('Heslo musí obsahovat velkéch malé písmeno, číslo a speciální znak')
+          setError('Password must contain uppercase, lowercase, number and special character')
           break
         case 'InvalidParameterException':
-          setError('Neplatný formát emailu')
+          setError('Invalid email format')
           break
         default:
-          setError(err.message || 'Registrace se nezdařila')
+          setError(err.message || 'Registration failed')
       }
     } finally {
       setLoading(false)
@@ -76,18 +76,18 @@ export default function Register() {
     setSuccess('')
 
     if (!confirmationCode) {
-      setError('Ověřovací kód je povinný')
+      setError('Verification code is required')
       setLoading(false)
       return
     }
 
     try {
       await confirmSignUp(email, confirmationCode)
-      setSuccess('Email ověřen! Můžete se nyní přihlásit.')
+      setSuccess('Email verified! You can now sign in.')
       
       // Redirect to login after short delay
       setTimeout(() => {
-        router.push('/login?message=Účet ověřen, můžete se přihlásit')
+        router.push('/login?message=Account verified, you can now sign in')
       }, 2000)
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string }
@@ -95,13 +95,13 @@ export default function Register() {
       
       switch (err.code) {
         case 'CodeMismatchException':
-          setError('Neplatný ověřovací kód')
+          setError('Invalid verification code')
           break
         case 'ExpiredCodeException':
-          setError('Ověřovací kód vypršel. Požádejte o nový.')
+          setError('Verification code has expired. Request a new one.')
           break
         default:
-          setError(err.message || 'Ověření se nezdařilo')
+          setError(err.message || 'Verification failed')
       }
     } finally {
       setLoading(false)
@@ -112,10 +112,10 @@ export default function Register() {
     try {
       setError('')
       await resendConfirmationCode(email)
-      setSuccess('Nový ověřovací kód byl odeslán na váš email')
+      setSuccess('New verification code sent to your email')
     } catch (error: unknown) {
       console.error('Resend code error:', error)
-      setError('Nepodařilo se odeslat nový kód')
+      setError('Failed to send new code')
     }
   }
 
@@ -124,7 +124,7 @@ export default function Register() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Načítá se autentifikační systém...</p>
+          <p className="mt-4 text-gray-600">Loading authentication system...</p>
         </div>
       </div>
     )
@@ -136,10 +136,10 @@ export default function Register() {
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Ověřte svůj email
+              Verify Your Email
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Poslali jsme ověřovací kód na{' '}
+              We sent a verification code to{' '}
               <span className="font-medium text-blue-600">{email}</span>
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function Register() {
           <form className="mt-8 space-y-6" onSubmit={handleConfirmSignUp}>
             <div>
               <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                Ověřovací kód
+                Verification Code
               </label>
               <input
                 id="code"
@@ -157,7 +157,7 @@ export default function Register() {
                 value={confirmationCode}
                 onChange={(e) => setConfirmationCode(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Zadejte 6-místný kód"
+                placeholder="Enter 6-digit code"
                 maxLength={6}
               />
             </div>
@@ -180,7 +180,7 @@ export default function Register() {
                 disabled={loading}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Ověřování...' : 'Ověřit účet'}
+                {loading ? 'Verifying...' : 'Verify Account'}
               </button>
             </div>
 
@@ -190,7 +190,7 @@ export default function Register() {
                 onClick={handleResendCode}
                 className="text-sm text-blue-600 hover:text-blue-500"
               >
-                Poslat nový kód
+                Send new code
               </button>
             </div>
           </form>
@@ -209,10 +209,10 @@ export default function Register() {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Vytvořte si účet
+            Create Your Account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Začněte používat WallMotion zdarma
+            Start using WallMotion for free
           </p>
         </div>
 
@@ -231,12 +231,12 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="váš@email.cz"
+                placeholder="your@email.com"
               />
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Heslo
+                Password
               </label>
               <input
                 id="password"
@@ -247,10 +247,10 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Minimálně 8 znaků"
+                placeholder="At least 8 characters"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Heslo musí obsahovat velkéch malé písmeno, číslo a speciální znak
+                Password must contain uppercase, lowercase, number and special character
               </p>
             </div>
           </div>
@@ -273,15 +273,15 @@ export default function Register() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Vytvářím účet...' : 'Vytvořit účet'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Už máte účet?{' '}
+              Already have an account?{' '}
               <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Přihlaste se zde
+                Sign in here
               </Link>
             </p>
           </div>
@@ -291,13 +291,13 @@ export default function Register() {
         <div className="pt-6 border-t border-gray-200">
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              Vytvořením účtu souhlasíte s našimi{' '}
+              By creating an account you agree to our{' '}
               <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                Podmínkami používání
+                Terms of Service
               </Link>{' '}
-              a{' '}
+              and{' '}
               <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
-                Zásadami ochrany soukromí
+                Privacy Policy
               </Link>
             </p>
           </div>

@@ -34,7 +34,7 @@ export async function validateCognitoToken(req: NextRequest) {
           console.log('🕐 Token is older than 1 hour, rejecting')
           return null
         }
-      } catch (e) {
+      } catch  {
         console.log('Failed to parse token JSON, using as-is')
       }
     }
@@ -84,14 +84,19 @@ export async function validateCognitoToken(req: NextRequest) {
       user: user.toObject()
     }
 
-  } catch (error: any) {
-    // Pokud je token expirovaný, jednoduše vrať null
-    if (error.name === 'NotAuthorizedException') {
-      console.log('🕐 Token expired or invalid, user needs to login again')
-      return null
-    }
-    
-    console.error('Cognito token validation error:', error)
+} catch (error: unknown) {
+  // Type guard pro error handling
+  const isAwsError = (err: unknown): err is { name: string; message: string } => {
+    return typeof err === 'object' && err !== null && 'name' in err && 'message' in err
+  }
+
+  // Pokud je token expirovaný, jednoduše vrať null
+  if (isAwsError(error) && error.name === 'NotAuthorizedException') {
+    console.log('🕐 Token expired or invalid, user needs to login again')
     return null
   }
+  
+  console.error('Cognito token validation error:', error)
+  return null
+}
 }

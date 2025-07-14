@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import {
@@ -45,61 +45,56 @@ export default function Profile() {
   const [editingDevice, setEditingDevice] = useState<string | null>(null)
   const [newDeviceName, setNewDeviceName] = useState('')
 
-  // Redirect pokud není přihlášený
+  // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
     }
   }, [user, authLoading, router])
 
-  // Načtení dat uživatele
-  useEffect(() => {
-    if (user) {
-      loadUserData()
-    }
-  }, [user])
-
-  const getAuthToken = async () => {
+const getAuthToken = useCallback(async () => {
     const storedAuth = localStorage.getItem('wallmotion_auth')
     if (storedAuth) {
       const authData = JSON.parse(storedAuth)
       
-      // Kontrola, zda token není příliš starý (přes 24 hodin)
+      // Check if token is too old (over 24 hours)
       const loginTime = authData.loginTime || 0
       const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
       
       if (hoursSinceLogin > 24) {
-        console.log('🕐 Token příliš starý, odhlašování...')
+        console.log('🕐 Token too old, signing out...')
         localStorage.removeItem('wallmotion_auth')
         await signOut()
         router.push('/login')
         return null
       }
       
-      // Ujisti se, že máme email pro případný refresh
+      // Make sure we have email for potential refresh
       if (!authData.email && !authData.username) {
         console.log('⚠️ Missing email/username in stored auth, adding...')
         authData.email = user?.username || user?.email
         localStorage.setItem('wallmotion_auth', JSON.stringify(authData))
       }
       
-      // Vrať celý JSON jako token - server ho parsuje
+      // Return the entire JSON as token - server will parse it
       return JSON.stringify(authData)
     }
     return null
-  }
+  }, [signOut, router, user])
 
-  const loadUserData = async () => {
+
+  // Load user data with useCallback
+  const loadUserData = useCallback(async () => {
     setLoading(true)
     try {
       const token = await getAuthToken()
       
       if (!token) {
-        setError('Nepodařilo se načíst přístupový token')
+        setError('Failed to get access token')
         return
       }
 
-      // Načtení informací o uživateli
+      // Load user information
       const userResponse = await fetch('/api/users', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -107,11 +102,11 @@ export default function Profile() {
       })
 
       if (userResponse.status === 401) {
-        // Token expiroval, přesměruj na login
+        // Token expired, redirect to login
         console.log('🕐 Token expired, redirecting to login')
         localStorage.removeItem('wallmotion_auth')
         await signOut()
-        router.push('/login?message=Relace vypršela, přihlaste se znovu')
+        router.push('/login?message=Session expired, please sign in again')
         return
       }
 
@@ -120,7 +115,7 @@ export default function Profile() {
         setUserData(userData.user)
       }
 
-      // Načtení zařízení
+      // Load devices
       const devicesResponse = await fetch('/api/devices', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -128,11 +123,11 @@ export default function Profile() {
       })
 
       if (devicesResponse.status === 401) {
-        // Token expiroval, přesměruj na login
+        // Token expired, redirect to login
         console.log('🕐 Token expired, redirecting to login')
         localStorage.removeItem('wallmotion_auth')
         await signOut()
-        router.push('/login?message=Relace vypršela, přihlaste se znovu')
+        router.push('/login?message=Session expired, please sign in again')
         return
       }
 
@@ -142,15 +137,22 @@ export default function Profile() {
       }
 
     } catch (error) {
-      console.error('Chyba při načítání dat:', error)
-      setError('Nepodařilo se načíst data uživatele')
+      console.error('Error loading data:', error)
+      setError('Failed to load user data')
     } finally {
       setLoading(false)
     }
-  }
+  }, [getAuthToken, signOut, router])
+
+  // Load user data
+  useEffect(() => {
+    if (user) {
+      loadUserData()
+    }
+  }, [user, loadUserData])
 
   const handleRemoveDevice = async (deviceId: string) => {
-    if (!confirm('Opravdu chcete odebrat toto zařízení?')) {
+    if (!confirm('Are you sure you want to remove this device?')) {
       return
     }
 
@@ -166,21 +168,21 @@ export default function Profile() {
 
       if (response.ok) {
         setDevices(devices.filter(device => device._id !== deviceId))
-        setSuccess('Zařízení bylo úspěšně odebráno')
+        setSuccess('Device was successfully removed')
         setTimeout(() => setSuccess(''), 3000)
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Nepodařilo se odebrat zařízení')
+        setError(errorData.error || 'Failed to remove device')
       }
     } catch (error) {
-      console.error('Chyba při odstraňování zařízení:', error)
-      setError('Nepodařilo se odebrat zařízení')
+      console.error('Error removing device:', error)
+      setError('Failed to remove device')
     }
   }
 
   const handleRenameDevice = async (deviceId: string) => {
     if (!newDeviceName.trim()) {
-      setError('Název zařízení nemůže být prázdný')
+      setError('Device name cannot be empty')
       return
     }
 
@@ -197,7 +199,7 @@ export default function Profile() {
       })
 
       if (response.ok) {
-        const data = await response.json()
+        await response.json() // Remove unused variable
         setDevices(devices.map(device => 
           device._id === deviceId 
             ? { ...device, name: newDeviceName.trim() }
@@ -205,15 +207,15 @@ export default function Profile() {
         ))
         setEditingDevice(null)
         setNewDeviceName('')
-        setSuccess('Název zařízení byl úspěšně změněn')
+        setSuccess('Device name was successfully changed')
         setTimeout(() => setSuccess(''), 3000)
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Nepodařilo se přejmenovat zařízení')
+        setError(errorData.error || 'Failed to rename device')
       }
     } catch (error) {
-      console.error('Chyba při přejmenování zařízení:', error)
-      setError('Nepodařilo se přejmenovat zařízení')
+      console.error('Error renaming device:', error)
+      setError('Failed to rename device')
     }
   }
 
@@ -234,7 +236,7 @@ export default function Profile() {
 
       if (response.ok) {
         const data = await response.json()
-        // Načtení Stripe a přesměrování
+        // Load Stripe and redirect
         const stripeModule = await import('@stripe/stripe-js')
         const stripe = await stripeModule.loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
         if (stripe) {
@@ -242,21 +244,21 @@ export default function Profile() {
         }
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Nepodařilo se inicializovat nákup')
+        setError(errorData.error || 'Failed to initialize purchase')
       }
     } catch (error) {
-      console.error('Chyba při nákupu licence:', error)
-      setError('Nepodařilo se inicializovat nákup')
+      console.error('Error purchasing license:', error)
+      setError('Failed to initialize purchase')
     }
   }
 
-  // Výpočet počtu dostupných licencí
+  // Calculate available licenses
   const getLicenseInfo = () => {
     if (!userData) return { hasLicense: false, devicesUsed: 0, maxDevices: 0 }
     
     const hasLicense = userData.licenseType === 'LIFETIME'
     const devicesUsed = devices.length
-    // Počet licencí určuje kolik zařízení může uživatel mít
+    // Number of licenses determines how many devices user can have
     const maxDevices = userData.licensesCount || (hasLicense ? 1 : 0)
     
     return { hasLicense, devicesUsed, maxDevices }
@@ -267,7 +269,7 @@ export default function Profile() {
       await signOut()
       router.push('/')
     } catch (error) {
-      console.error('Chyba při odhlašování:', error)
+      console.error('Error signing out:', error)
     }
   }
 
@@ -276,7 +278,7 @@ export default function Profile() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Načítání profilu...</p>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
         </div>
       </div>
     )
@@ -298,14 +300,14 @@ export default function Profile() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {userData?.email || user.username || user.email}
                 </h1>
-                <p className="text-gray-600">Správa účtu WallMotion</p>
+                <p className="text-gray-600">WallMotion Account Management</p>
               </div>
             </div>
             <button
               onClick={handleSignOut}
               className="px-4 py-2 text-gray-600 hover:text-red-600 transition-colors"
             >
-              Odhlásit se
+              Sign Out
             </button>
           </div>
         </div>
@@ -342,31 +344,31 @@ export default function Profile() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Licence */}
+          {/* Licenses */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <ShoppingBagIcon className="w-6 h-6 mr-2 text-blue-600" />
-                Licence a zařízení
+                Licenses & Devices
               </h2>
             </div>
 
             <div className="space-y-6">
-              {/* Přehled licencí */}
+              {/* License Overview */}
               <div className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-gray-900">Stav licencí</h3>
+                  <h3 className="font-semibold text-gray-900">License Status</h3>
                   <span className="text-sm text-gray-600">
-                    {devicesUsed} / {maxDevices > 0 ? maxDevices : '0'} zařízení
+                    {devicesUsed} / {maxDevices > 0 ? maxDevices : '0'} devices
                   </span>
                 </div>
                 
                 {hasLicense ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-green-700">✓ Aktivní licence</span>
+                      <span className="text-green-700">✓ Active License</span>
                       <span className="text-gray-600">
-                        Zakoupena: {userData?.purchaseDate ? new Date(userData.purchaseDate).toLocaleDateString('cs-CZ') : 'N/A'}
+                        Purchased: {userData?.purchaseDate ? new Date(userData.purchaseDate).toLocaleDateString('en-US') : 'N/A'}
                       </span>
                     </div>
                     
@@ -378,24 +380,25 @@ export default function Profile() {
                       ></div>
                     </div>
                     
-                    {devicesUsed >= maxDevices && (
-                      <p className="text-sm text-red-600">
-                        ⚠️ Dosáhli jste limitu zařízení. Kupte další licenci pro registraci dalšího zařízení.
-                      </p>
-                    )}
+                      {devicesUsed >= maxDevices && (
+                        <p className="text-sm text-red-600">
+                          ⚠️ You&apos;ve reached the device limit. Purchase another license to register additional devices.
+                        </p>
+                      )}
+
                   </div>
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-gray-600 mb-2">Nemáte žádnou aktivní licenci</p>
-                    <p className="text-sm text-gray-500">Kupte si první licenci pro registraci zařízení</p>
+                    <p className="text-gray-600 mb-2">No active license</p>
+                    <p className="text-sm text-gray-500">Purchase your first license to register devices</p>
                   </div>
                 )}
               </div>
 
-              {/* Nákup licence */}
+              {/* Purchase License */}
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-gray-900 mb-4">
-                  {hasLicense ? 'Koupit další licenci' : 'Koupit první licenci'}
+                  {hasLicense ? 'Buy Additional License' : 'Buy Your First License'}
                 </h3>
                 
                 <button
@@ -403,40 +406,40 @@ export default function Profile() {
                   className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
                 >
                   <div className="text-center">
-                    <h4 className="font-medium mb-2">Licence pro 1 zařízení</h4>
+                    <h4 className="font-medium mb-2">License for 1 Device</h4>
                     <p className="text-sm text-gray-600 mb-3">
                       {hasLicense 
-                        ? 'Přidejte licence pro další zařízení'
-                        : 'Doživotní přístup k aplikaci'
+                        ? 'Add licenses for additional devices'
+                        : 'Lifetime access to the application'
                       }
                     </p>
                     <span className="text-2xl font-bold text-blue-600">$10</span>
-                    <p className="text-xs text-gray-500 mt-1">Jednorázová platba za zařízení</p>
+                    <p className="text-xs text-gray-500 mt-1">One-time payment per device</p>
                   </div>
                 </button>
                 
                 {hasLicense && (
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Každá licence umožňuje registraci jednoho dalšího zařízení
+                    Each license allows registration of one additional device
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Zařízení */}
+          {/* Devices */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <ComputerDesktopIcon className="w-6 h-6 mr-2 text-green-600" />
-                Moje zařízení
+                My Devices
               </h2>
             </div>
 
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Načítání zařízení...</p>
+                <p className="mt-2 text-gray-600">Loading devices...</p>
               </div>
             ) : devices.length > 0 ? (
               <div className="space-y-4">
@@ -450,38 +453,37 @@ export default function Profile() {
                               type="text"
                               value={newDeviceName}
                               onChange={(e) => setNewDeviceName(e.target.value)}
-                              className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Název zařízení"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Device name"
                             />
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => handleRenameDevice(device._id)}
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                               >
-                                Uložit
+                                Save
                               </button>
                               <button
                                 onClick={() => {
                                   setEditingDevice(null)
                                   setNewDeviceName('')
                                 }}
-                                className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
                               >
-                                Zrušit
+                                Cancel
                               </button>
                             </div>
                           </div>
                         ) : (
                           <div>
                             <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold text-gray-900">{device.name}</h3>
+                              <h3 className="font-medium text-gray-900">{device.name}</h3>
                               <button
                                 onClick={() => {
                                   setEditingDevice(device._id)
                                   setNewDeviceName(device.name)
                                 }}
-                                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                                title="Přejmenovat zařízení"
+                                className="text-gray-400 hover:text-gray-600"
                               >
                                 <PencilIcon className="w-4 h-4" />
                               </button>
@@ -493,10 +495,10 @@ export default function Profile() {
                               <p className="text-sm text-gray-600">macOS: {device.macosVersion}</p>
                             )}
                             <p className="text-sm text-gray-600">
-                              Naposledy aktivní: {new Date(device.lastSeen).toLocaleDateString('cs-CZ')}
+                              Last active: {new Date(device.lastSeen).toLocaleDateString('en-US')}
                             </p>
                             <p className="text-sm text-gray-600">
-                              Registrováno: {new Date(device.registeredAt).toLocaleDateString('cs-CZ')}
+                              Registered: {new Date(device.registeredAt).toLocaleDateString('en-US')}
                             </p>
                           </div>
                         )}
@@ -505,12 +507,12 @@ export default function Profile() {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           device.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {device.isActive ? 'Aktivní' : 'Neaktivní'}
+                          {device.isActive ? 'Active' : 'Inactive'}
                         </span>
                         <button
                           onClick={() => handleRemoveDevice(device._id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Odebrat zařízení"
+                          className="text-red-600 hover:text-red-800"
+                          title="Remove device"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -522,35 +524,18 @@ export default function Profile() {
             ) : (
               <div className="text-center py-8">
                 <ComputerDesktopIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">Nemáte žádná registrovaná zařízení</p>
-                <p className="text-sm text-gray-500">
-                  Stáhněte si aplikaci a přihlaste se pro registraci zařízení
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No registered devices</h3>
+                <p className="text-gray-600 mb-4">
+                  Download and sign in to the WallMotion app to register your device
                 </p>
+                <div className="space-y-2 text-sm text-gray-500">
+                  <p>1. Purchase a license</p>
+                  <p>2. Download the WallMotion app for macOS</p>
+                  <p>3. Sign in with your account credentials</p>
+                  <p>4. Your device will automatically register</p>
+                </div>
               </div>
             )}
-
-            {/* Pokyny pro přidání zařízení */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-3">Jak přidat zařízení</h3>
-              <ol className="text-sm text-gray-600 space-y-2">
-                <li className="flex items-start">
-                  <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold mr-2 mt-0.5">1</span>
-                  Zakupte si licenci (pokud ji ještě nemáte)
-                </li>
-                <li className="flex items-start">
-                  <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold mr-2 mt-0.5">2</span>
-                  Stáhněte si WallMotion aplikaci na macOS
-                </li>
-                <li className="flex items-start">
-                  <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold mr-2 mt-0.5">3</span>
-                  Přihlaste se pomocí svých přihlašovacích údajů
-                </li>
-                <li className="flex items-start">
-                  <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold mr-2 mt-0.5">4</span>
-                  Zařízení se automaticky zaregistruje k vašemu účtu
-                </li>
-              </ol>
-            </div>
           </div>
         </div>
       </div>

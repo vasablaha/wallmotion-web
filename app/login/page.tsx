@@ -47,13 +47,13 @@ function LoginContent() {
 
     // Basic validation
     if (!email || !password) {
-      setError('Email a heslo jsou povinné')
+      setError('Email and password are required')
       setLoading(false)
       return
     }
 
     if (!amplifyReady) {
-      setError('Systém se načítá, zkuste to za chvilku')
+      setError('System is loading, please try again in a moment')
       setLoading(false)
       return
     }
@@ -64,7 +64,7 @@ function LoginContent() {
       const result = await signIn(email, password)
       
       console.log('✅ Login successful:', result)
-      setSuccess('Přihlášení úspěšné! Přesměrováváme vás...')
+      setSuccess('Sign in successful! Redirecting...')
       
       // Redirect to dashboard or home page after short delay
       setTimeout(() => {
@@ -72,7 +72,7 @@ function LoginContent() {
       }, 1500)
       
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Přihlášení se nezdařilo'
+      const errorMessage = error instanceof Error ? error.message : 'Sign in failed'
       console.error('❌ Login error:', error)
       setError(errorMessage)
     } finally {
@@ -80,25 +80,12 @@ function LoginContent() {
     }
   }
 
-  // Show loading screen while auth is being checked
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Kontroluji přihlášení...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show loading screen while Amplify initializes
   if (!amplifyReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Načítá se autentifikační systém...</p>
+          <p className="mt-4 text-gray-600">Loading authentication system...</p>
         </div>
       </div>
     )
@@ -114,12 +101,12 @@ function LoginContent() {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Přihlaste se do svého účtu
+            Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Nebo{' '}
+            Or{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              si vytvořte nový účet
+              create a new account
             </Link>
           </p>
         </div>
@@ -139,12 +126,12 @@ function LoginContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="váš@email.cz"
+                placeholder="your@email.com"
               />
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Heslo
+                Password
               </label>
               <input
                 id="password"
@@ -155,8 +142,16 @@ function LoginContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Zadejte vaše heslo"
+                placeholder="Your password"
               />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                Forgot your password?
+              </Link>
             </div>
           </div>
 
@@ -172,41 +167,21 @@ function LoginContent() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Zapamatovat si mě
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                Zapomněli jste heslo?
-              </Link>
-            </div>
-          </div>
-
           <div>
             <button
               type="submit"
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Přihlašování...' : 'Přihlásit se'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Nemáte účet?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                Vytvořte si ho zde
+                Create one here
               </Link>
             </p>
           </div>
@@ -216,13 +191,13 @@ function LoginContent() {
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              Přihlášením souhlasíte s našimi{' '}
+              By signing in you agree to our{' '}
               <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                Podmínkami používání
+                Terms of Service
               </Link>{' '}
-              a{' '}
+              and{' '}
               <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
-                Zásadami ochrany soukromí
+                Privacy Policy
               </Link>
             </p>
           </div>
@@ -237,7 +212,7 @@ function LoginLoadingFallback() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Načítá se přihlášení...</p>
+        <p className="mt-4 text-gray-600">Loading sign in...</p>
       </div>
     </div>
   )
