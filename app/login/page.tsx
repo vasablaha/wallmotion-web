@@ -12,7 +12,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const { signIn, amplifyReady, user } = useAuth()
+  const { signIn, amplifyReady, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -24,12 +24,20 @@ export default function Login() {
     }
   }, [searchParams])
 
-  // Redirect if already logged in
+  // Redirect if already logged in - but wait for auth to load
   useEffect(() => {
+    console.log('🔐 Login: Auth state:', { user: !!user, authLoading, username: user?.username })
+    
+    if (authLoading) {
+      console.log('⏳ Login: Auth loading, waiting...')
+      return
+    }
+    
     if (user) {
+      console.log('✅ Login: User already logged in, redirecting to home')
       router.push('/')
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +77,18 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading screen while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Kontroluji přihlášení...</p>
+        </div>
+      </div>
+    )
   }
 
   // Show loading screen while Amplify initializes

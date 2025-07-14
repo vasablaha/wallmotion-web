@@ -37,8 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Wait for Amplify to be configured
     const initializeAuth = async () => {
       try {
+        console.log('🚀 Starting auth initialization...')
+        
         // Wait for Amplify config
         await amplifyReady
+        console.log('✅ Amplify config loaded')
         
         // Additional delay to ensure full initialization
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -46,7 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAmplifyReady(true)
         console.log('🚀 Amplify ready, checking user...')
         
-        await checkUser()
+        // Hned po nastavení isAmplifyReady zavolej checkUser
+        await checkUserManual()
       } catch (error) {
         console.error('Auth initialization error:', error)
         setIsAmplifyReady(true)
@@ -56,20 +60,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
   }, [])
-
-  const checkUser = async () => {
-    if (!isAmplifyReady) return
+  
+  // Samostatná funkce pro check usera bez závislosti na isAmplifyReady state
+  const checkUserManual = async () => {
+    console.log('🔍 Starting checkUserManual...')
     
     try {
       // Nejdříve zkus načíst z localStorage (DirectCognito tokeny)
       if (typeof window !== 'undefined') {
+        console.log('🔍 Checking localStorage for stored auth...')
         const storedAuth = localStorage.getItem('wallmotion_auth')
         if (storedAuth) {
+          console.log('✅ Found stored auth data')
           const authData = JSON.parse(storedAuth)
           
           // Kontrola, jestli token není příliš starý (24 hodin)
           const loginTime = authData.loginTime || 0
           const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+          
+          console.log(`🕐 Hours since login: ${hoursSinceLogin}`)
           
           if (hoursSinceLogin < 24) {
             console.log('✅ Found valid stored auth, restoring user session')
@@ -84,24 +93,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             setUser(mockUser)
             setLoading(false)
+            console.log('✅ User restored from localStorage:', authData.username)
             return
           } else {
             console.log('🕐 Stored auth expired, clearing...')
             localStorage.removeItem('wallmotion_auth')
           }
+        } else {
+          console.log('ℹ️ No stored auth found in localStorage')
         }
       }
       
       // Fallback - zkus načíst z Amplify (standardní přihlášení)
+      console.log('🔍 Attempting to get current user from Amplify...')
       const currentUser = await getCurrentUser()
       console.log('✅ Current user found from Amplify:', currentUser.username)
       setUser(currentUser)
     } catch (error) {
-      console.log('ℹ️ No authenticated user found')
+      console.log('ℹ️ No authenticated user found:', error)
       setUser(null)
     } finally {
+      console.log('🏁 checkUserManual finished, setting loading to false')
       setLoading(false)
     }
+  }
+
+  const checkUser = async () => {
+    console.log('🔍 checkUser called, isAmplifyReady:', isAmplifyReady)
+    
+    if (!isAmplifyReady) {
+      console.log('🚫 Amplify not ready, skipping checkUser')
+      return
+    }
+    
+    // Deleguj na checkUserManual
+    await checkUserManual()
   }
 
   const handleSignIn = async (email: string, password: string) => {
@@ -119,6 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Po úspěšném přihlášení nastav user state
       if (result.accessToken) {
+        console.log('🔑 Setting up user session with tokens...')
+        
         // Simuluj Amplify user objekt
         const mockUser = {
           username: email,
@@ -132,17 +160,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Ulož tokeny do localStorage pro persistence
         if (typeof window !== 'undefined') {
-          localStorage.setItem('wallmotion_auth', JSON.stringify({
+          const authData = {
             accessToken: result.accessToken,
             idToken: result.idToken,
             refreshToken: result.refreshToken,
             username: email,
             loginTime: Date.now()
-          }))
+          }
+          
+          localStorage.setItem('wallmotion_auth', JSON.stringify(authData))
+          console.log('💾 Auth data saved to localStorage:', email)
         }
         
         setUser(mockUser)
-        console.log('✅ User state set after login')
+        console.log('✅ User state set after login:', email)
+      } else {
+        console.log('❌ No access token in result!')
       }
       
       return result
@@ -313,7 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = async () => {
     try {
-      await checkUser()
+      await checkUserManual()
     } catch (error) {
       console.error('❌ Refresh session error:', error)
     }

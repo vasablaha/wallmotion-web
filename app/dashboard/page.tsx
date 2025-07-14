@@ -38,7 +38,7 @@ interface UserData {
 }
 
 export default function Dashboard() {
-  const { user, getAccessToken, signOut } = useAuth()
+  const { user, getAccessToken, signOut, loading: authLoading } = useAuth()
   const router = useRouter()
   
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -47,13 +47,29 @@ export default function Dashboard() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    console.log('🎛️ Dashboard: Auth state changed:', { 
+      user: !!user, 
+      authLoading, 
+      username: user?.username 
+    })
+    
+    // Čekej dokud se auth nenačte
+    if (authLoading) {
+      console.log('⏳ Dashboard: Auth still loading, waiting...')
+      return
+    }
+    
+    // Pokud není uživatel po načtení auth, přesměruj na login
     if (!user) {
+      console.log('🚪 Dashboard: No user found, redirecting to login')
       router.push('/login')
       return
     }
     
+    // Uživatel je přihlášen, načti data
+    console.log('✅ Dashboard: User is logged in, loading data')
     loadDashboardData()
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const loadDashboardData = async () => {
     try {
@@ -199,6 +215,17 @@ export default function Dashboard() {
           </span>
         )
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Načítám autentifikaci...</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
