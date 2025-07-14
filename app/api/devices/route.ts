@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
-import Device from '@/lib/models/Device'
+import Device, { IDevice } from '@/lib/models/Device'
 import { validateCognitoToken } from '@/lib/auth-cognito'
 
-// GET /api/devices - Seznam zařízení uživatele
+// GET /api/devices - Seznam zařízení nebo detail konkrétního zařízení
 export async function GET(req: NextRequest) {
   try {
     await dbConnect()
@@ -13,6 +13,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    const { searchParams } = new URL(req.url)
+    const deviceId = searchParams.get('id')
+    
+    // Pokud je zadané ID, vrať detail konkrétního zařízení
+    if (deviceId) {
+      const device = await Device.findById(deviceId)
+      
+      if (!device) {
+        return NextResponse.json({ error: 'Zařízení nebylo nalezeno' }, { status: 404 })
+      }
+      
+      if (device.cognitoId !== auth.cognitoId) {
+        return NextResponse.json({ error: 'Nemáte oprávnění zobrazit toto zařízení' }, { status: 403 })
+      }
+      
+      return NextResponse.json({ device: JSON.parse(JSON.stringify(device.toObject())) })
+    }
+    
+    // Jinak vrať seznam všech zařízení uživatele
     const devices = await Device.find({ cognitoId: auth.cognitoId })
       .sort({ lastSeen: -1 })
       .lean()
@@ -25,7 +44,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/devices - Registrace nového zařízení
+// POST /api/devices - Registrace nového zařízení (volané z macOS aplikace)
 export async function POST(req: NextRequest) {
   try {
     await dbConnect()
@@ -57,7 +76,7 @@ export async function POST(req: NextRequest) {
     
     if (existingDevices >= 1) {
       return NextResponse.json({ 
-        error: 'Můžete mít registrované pouze jedno zařízení. Odeberte stávající zařízení pro registraci nového.' 
+        error: 'Můžete mít registrované pouze jedno zařízení. Odeberte stávající zařízení pro registraci nového.'
       }, { status: 400 })
     }
     
@@ -87,7 +106,7 @@ export async function POST(req: NextRequest) {
       )
       
       console.log(`Device reactivated: ${fingerprint} for user: ${auth.cognitoId}`)
-      return NextResponse.json({ success: true, device: updatedDevice })
+      return NextResponse.json({ success: true, device: JSON.parse(JSON.stringify(updatedDevice.toObject())) })
     }
     
     // Registrace nového zařízení
@@ -103,7 +122,7 @@ export async function POST(req: NextRequest) {
     await device.save()
     
     console.log(`New device registered: ${fingerprint} for user: ${auth.cognitoId}`)
-    return NextResponse.json({ success: true, device })
+    return NextResponse.json({ success: true, device: JSON.parse(JSON.stringify(device.toObject())) })
     
   } catch (error) {
     console.error('Device registration error:', error)
@@ -111,7 +130,58 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE /api/devices - Deaktivace zařízení
+// PUT /api/devices?id=deviceId - Přejmenování zařízení (volané z Dashboard)
+export async function PUT(req: NextRequest) {
+  try {
+    await dbConnect()
+    
+    const auth = await validateCognitoToken(req)
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    const { searchParams } = new URL(req.url)
+    const deviceId = searchParams.get('id')
+    
+    if (!deviceId) {
+      return NextResponse.json({ error: 'ID zařízení je povinné' }, { status: 400 })
+    }
+    
+    const { name } = await req.json()
+    
+    if (!name || name.trim().length === 0) {
+      return NextResponse.json({ error: 'Název zařízení je povinný' }, { status: 400 })
+    }
+    
+    // Najít zařízení a ověřit vlastnictví
+    const device = await Device.findById(deviceId)
+    
+    if (!device) {
+      return NextResponse.json({ error: 'Zařízení nebylo nalezeno' }, { status: 404 })
+    }
+    
+    if (device.cognitoId !== auth.cognitoId) {
+      return NextResponse.json({ error: 'Nemáte oprávnění upravit toto zařízení' }, { status: 403 })
+    }
+    
+    // Aktualizovat název
+    device.name = name.trim()
+    await device.save()
+    
+    console.log(`Device ${deviceId} renamed to "${name}" by user ${auth.cognitoId}`)
+    
+    return NextResponse.json({ 
+      message: 'Název zařízení byl úspěšně změněn',
+      device: JSON.parse(JSON.stringify(device.toObject()))
+    })
+    
+  } catch (error) {
+    console.error('Update device error:', error)
+    return NextResponse.json({ error: 'Nepodařilo se aktualizovat zařízení' }, { status: 500 })
+  }
+}
+
+// DELETE /api/devices?id=deviceId - Smazání zařízení (volané z Dashboard)
 export async function DELETE(req: NextRequest) {
   try {
     await dbConnect()
@@ -121,27 +191,33 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { deviceId } = await req.json()
+    const { searchParams } = new URL(req.url)
+    const deviceId = searchParams.get('id')
     
     if (!deviceId) {
-      return NextResponse.json({ error: 'Device ID je povinné' }, { status: 400 })
+      return NextResponse.json({ error: 'ID zařízení je povinné' }, { status: 400 })
     }
     
-    // Deaktivace zařízení (pouze vlastní zařízení)
-    const result = await Device.updateOne(
-      { 
-        _id: deviceId,
-        cognitoId: auth.cognitoId 
-      },
-      { isActive: false }
-    )
+    // Najít zařízení a ověřit vlastnictví
+    const device = await Device.findById(deviceId)
     
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Zařízení nenalezeno' }, { status: 404 })
+    if (!device) {
+      return NextResponse.json({ error: 'Zařízení nebylo nalezeno' }, { status: 404 })
     }
     
-    console.log(`Device deactivated: ${deviceId} by user: ${auth.cognitoId}`)
-    return NextResponse.json({ success: true })
+    if (device.cognitoId !== auth.cognitoId) {
+      return NextResponse.json({ error: 'Nemáte oprávnění smazat toto zařízení' }, { status: 403 })
+    }
+    
+    // Smazat zařízení
+    await Device.findByIdAndDelete(deviceId)
+    
+    console.log(`Device ${device.name} (${deviceId}) deleted by user ${auth.cognitoId}`)
+    
+    return NextResponse.json({ 
+      message: 'Zařízení bylo úspěšně odebráno',
+      deviceName: device.name
+    })
     
   } catch (error) {
     console.error('Delete device error:', error)

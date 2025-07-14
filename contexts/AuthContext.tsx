@@ -61,8 +61,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isAmplifyReady) return
     
     try {
+      // Nejdříve zkus načíst z localStorage (DirectCognito tokeny)
+      if (typeof window !== 'undefined') {
+        const storedAuth = localStorage.getItem('wallmotion_auth')
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth)
+          
+          // Kontrola, jestli token není příliš starý (24 hodin)
+          const loginTime = authData.loginTime || 0
+          const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+          
+          if (hoursSinceLogin < 24) {
+            console.log('✅ Found valid stored auth, restoring user session')
+            const mockUser = {
+              username: authData.username,
+              userId: authData.username,
+              signInUserSession: {
+                accessToken: authData.accessToken,
+                idToken: authData.idToken,
+                refreshToken: authData.refreshToken
+              }
+            }
+            setUser(mockUser)
+            setLoading(false)
+            return
+          } else {
+            console.log('🕐 Stored auth expired, clearing...')
+            localStorage.removeItem('wallmotion_auth')
+          }
+        }
+      }
+      
+      // Fallback - zkus načíst z Amplify (standardní přihlášení)
       const currentUser = await getCurrentUser()
-      console.log('✅ Current user found:', currentUser.username)
+      console.log('✅ Current user found from Amplify:', currentUser.username)
       setUser(currentUser)
     } catch (error) {
       console.log('ℹ️ No authenticated user found')
@@ -85,8 +117,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('✅ Direct sign in result:', result)
       
-      // TODO: Set user state from tokens
-      // For now, we'll need to implement token-based user management
+      // Po úspěšném přihlášení nastav user state
+      if (result.accessToken) {
+        // Simuluj Amplify user objekt
+        const mockUser = {
+          username: email,
+          userId: email,
+          signInUserSession: {
+            accessToken: result.accessToken,
+            idToken: result.idToken,
+            refreshToken: result.refreshToken
+          }
+        }
+        
+        // Ulož tokeny do localStorage pro persistence
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('wallmotion_auth', JSON.stringify({
+            accessToken: result.accessToken,
+            idToken: result.idToken,
+            refreshToken: result.refreshToken,
+            username: email,
+            loginTime: Date.now()
+          }))
+        }
+        
+        setUser(mockUser)
+        console.log('✅ User state set after login')
+      }
       
       return result
     } catch (error: any) {
@@ -146,12 +203,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     try {
       setLoading(true)
-      await signOut()
+      
+      // Vyčisti localStorage tokeny
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wallmotion_auth')
+      }
+      
+      // Zkus odhlásit z Amplify (může selhat pokud není Amplify session)
+      try {
+        await signOut()
+        console.log('✅ Amplify user signed out')
+      } catch (error) {
+        console.log('ℹ️ No Amplify session to sign out from')
+      }
+      
       console.log('✅ User signed out')
       setUser(null)
     } catch (error: any) {
       console.error('❌ Sign out error:', error)
-      throw error
+      // I při chybě vyčisti user state
+      setUser(null)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wallmotion_auth')
+      }
     } finally {
       setLoading(false)
     }
@@ -208,6 +282,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getAccessToken = async () => {
     try {
+      // Nejdříve zkus načíst z localStorage (DirectCognito tokeny)
+      if (typeof window !== 'undefined') {
+        const storedAuth = localStorage.getItem('wallmotion_auth')
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth)
+          const loginTime = authData.loginTime || 0
+          const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+          
+          if (hoursSinceLogin < 24 && authData.accessToken) {
+            console.log('✅ Using stored access token')
+            return authData.accessToken
+          } else {
+            console.log('🕐 Stored token expired, clearing...')
+            localStorage.removeItem('wallmotion_auth')
+            setUser(null)
+          }
+        }
+      }
+      
+      // Fallback - zkus načíst z Amplify session
       const session = await fetchAuthSession()
       const accessToken = session.tokens?.accessToken?.toString()
       return accessToken || null
