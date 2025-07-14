@@ -64,34 +64,93 @@ export default function HomePage() {
     }
   ]
 
-
   const handlePurchase = async () => {
     try {
-      console.log('Starting Stripe checkout...')
+      console.log('🚀 Starting checkout process...')
+      console.log('💰 Price ID:', process.env.NEXT_PUBLIC_STRIPE_PRICE_ID)
+      console.log('🔑 Publishable key exists:', !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+      console.log('🔑 Publishable key (first 20 chars):', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20))
       
+      // Test API availability first
+      console.log('🔍 Testing API availability...')
+      try {
+        const testResponse = await fetch('/api/test')
+        const testData = await testResponse.json()
+        console.log('✅ API test response:', testData)
+      } catch (error: unknown) {
+        console.error('❌ API test failed:', error)
+        alert('API není dostupné! Zkontroluj server.')
+        return
+      }
+      
+      if (!process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
+        alert('❌ Chybí NEXT_PUBLIC_STRIPE_PRICE_ID v .env.local')
+        return
+      }
+
+      if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+        alert('❌ Chybí NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY v .env.local')
+        return
+      }
+
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID, // Your Stripe Price ID
+          priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
         }),
       })
 
-      const { sessionId } = await response.json()
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response ok:', response.ok)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ API Error:', errorText)
+        console.error('❌ Response status:', response.status)
+        console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()))
+        
+        if (response.status === 405) {
+          alert('❌ API endpoint nenalezen! Zkontroluj, že máš soubor app/api/create-checkout/route.ts')
+        } else {
+          alert(`API Error (${response.status}): ${errorText}`)
+        }
+        return
+      }
 
-      // Redirect to Stripe Checkout
+      const data = await response.json()
+      console.log('✅ API Response:', data)
+
+      if (!data.sessionId) {
+        console.error('❌ No sessionId in response')
+        alert('No session ID received from API')
+        return
+      }
+
+      console.log('🎯 Loading Stripe...')
       const stripe = await import('@stripe/stripe-js').then(module => 
         module.loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
       )
       
+      console.log('✅ Stripe loaded:', !!stripe)
+      
       if (stripe) {
-        await stripe.redirectToCheckout({ sessionId })
+        console.log('🏃 Redirecting to checkout with sessionId:', data.sessionId)
+        const result = await stripe.redirectToCheckout({ sessionId: data.sessionId })
+        if (result.error) {
+          console.error('❌ Stripe redirect error:', result.error)
+          alert(`Stripe redirect error: ${result.error.message}`)
+        }
+      } else {
+        console.error('❌ Failed to load Stripe')
+        alert('Failed to load Stripe library')
       }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Something went wrong. Please try again.')
+    } catch (error: unknown) {
+      console.error('💥 Checkout error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Detailed error: ${errorMessage}`)
     }
   }
 
@@ -280,11 +339,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      {/* Removed testimonials section */}
-
       {/* Pricing Section */}
-      <section className="py-20">
+      <section id="pricing" className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
