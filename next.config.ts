@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     REGION_AWS: process.env.REGION_AWS,
     USER_POOL_ID_AWS: process.env.USER_POOL_ID_AWS,
     USER_POOL_CLIENT_ID_AWS: process.env.USER_POOL_CLIENT_ID_AWS,
+    USER_POOL_CLIENT_SECRET_AWS: process.env.USER_POOL_CLIENT_SECRET_AWS,
     ACCESS_KEY_ID_AWS: process.env.ACCESS_KEY_ID_AWS,
     SECRET_ACCESS_KEY_AWS: process.env.SECRET_ACCESS_KEY_AWS,
     
