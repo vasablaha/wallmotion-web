@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { validateCognitoToken } from '@/lib/auth-cognito'
 
-// Zkontroluj, že máš Stripe secret key
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing STRIPE_SECRET_KEY environment variable')
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
 })
 
 export async function POST(req: NextRequest) {
-  console.log('🔥 API /api/create-checkout called')
-  
   try {
-    const body = await req.json()
-    console.log('📦 Request body:', body)
+    console.log('🔥 API /api/create-checkout called')
     
-    const priceId = body?.priceId
+    // Validace přihlášeného uživatele
+    const auth = await validateCognitoToken(req)
+    if (!auth) {
+      return NextResponse.json({ error: 'Musíte se přihlásit' }, { status: 401 })
+    }
+    
+    console.log('✅ User authenticated:', auth.email)
+    
+    const body = await req.json()
+    const priceId = body?.priceId || process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
+    
     console.log('💰 Price ID:', priceId)
 
     if (!priceId || typeof priceId !== 'string') {
@@ -36,7 +39,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const origin = req.headers.get('origin') || 'http://localhost:3000'
+    // Kontrola, zda už nemá licenci
+    if (auth.user.licenseType !== 'NONE') {
+      return NextResponse.json({ 
+        error: 'Již máte aktivní licenci. Pokud máte problémy, kontaktujte podporu.' 
+      }, { status: 400 })
+    }
+
+    const origin = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     console.log('🌐 Origin:', origin)
 
     console.log('🎯 Creating Stripe checkout session...')
@@ -51,7 +61,12 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/`,
+      customer_email: auth.email,
       billing_address_collection: 'required',
+      metadata: {
+        cognitoId: auth.cognitoId, // Klíčové pro webhook
+        userEmail: auth.email
+      }
     })
 
     console.log('✅ Checkout session created:', session.id)
@@ -63,7 +78,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error('💥 API Error:', error)
     
-    // Zkontroluj, jestli je to Stripe error
+    // Stripe error handling
     if (error && typeof error === 'object' && 'type' in error) {
       const stripeError = error as { type: string; message: string; code?: string }
       if (stripeError.type === 'StripeInvalidRequestError') {
@@ -91,14 +106,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Přidej OPTIONS handler pro CORS
+// OPTIONS handler pro CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   })
 }
