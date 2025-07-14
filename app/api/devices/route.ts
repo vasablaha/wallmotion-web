@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
-import Device, { IDevice } from '@/lib/models/Device'
+import Device from '@/lib/models/Device'
 import { validateCognitoToken } from '@/lib/auth-cognito'
 
 // GET /api/devices - Seznam zařízení nebo detail konkrétního zařízení

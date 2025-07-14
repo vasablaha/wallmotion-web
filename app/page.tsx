@@ -7,15 +7,8 @@ import FeaturesSection from './components/FeaturesSection'
 import VideoGallery from './components/VideoGallery'
 import ProfileModal from './components/ProfileModal'
 
-import { 
-  ComputerDesktopIcon, 
-  CloudArrowUpIcon, 
-  SwatchIcon, 
-  CubeTransparentIcon,
-  GlobeAltIcon,
-  ShieldCheckIcon
-} from '@heroicons/react/24/outline'
-import { ChevronRightIcon, PlayIcon, CheckIcon } from '@heroicons/react/24/solid'
+import { ComputerDesktopIcon, } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/24/solid'
 
 
 export default function HomePage() {

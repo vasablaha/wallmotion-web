@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
-import User, { IUser } from '@/lib/models/User'
+import User from '@/lib/models/User'
 import { validateCognitoToken } from '@/lib/auth-cognito'
 
 // GET /api/user - Získání informací o aktuálním uživateli

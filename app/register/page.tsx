@@ -46,11 +46,12 @@ export default function Register() {
       await signUp(email, password)
       setNeedsConfirmation(true)
       setSuccess('Registrace úspěšná! Zkontrolujte email pro ověřovací kód.')
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string }
       console.error('Registration error:', error)
       
       // Handle specific Cognito errors
-      switch (error.code) {
+      switch (err.code) {
         case 'UsernameExistsException':
           setError('Účet s tímto emailem již existuje')
           break
@@ -61,7 +62,7 @@ export default function Register() {
           setError('Neplatný formát emailu')
           break
         default:
-          setError(error.message || 'Registrace se nezdařila')
+          setError(err.message || 'Registrace se nezdařila')
       }
     } finally {
       setLoading(false)
@@ -88,10 +89,11 @@ export default function Register() {
       setTimeout(() => {
         router.push('/login?message=Účet ověřen, můžete se přihlásit')
       }, 2000)
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string }
       console.error('Confirmation error:', error)
       
-      switch (error.code) {
+      switch (err.code) {
         case 'CodeMismatchException':
           setError('Neplatný ověřovací kód')
           break
@@ -99,7 +101,7 @@ export default function Register() {
           setError('Ověřovací kód vypršel. Požádejte o nový.')
           break
         default:
-          setError(error.message || 'Ověření se nezdařilo')
+          setError(err.message || 'Ověření se nezdařilo')
       }
     } finally {
       setLoading(false)
@@ -111,7 +113,8 @@ export default function Register() {
       setError('')
       await resendConfirmationCode(email)
       setSuccess('Nový ověřovací kód byl odeslán na váš email')
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error('Resend code error:', error)
       setError('Nepodařilo se odeslat nový kód')
     }
   }
@@ -231,7 +234,6 @@ export default function Register() {
                 placeholder="váš@email.cz"
               />
             </div>
-
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Heslo
@@ -246,10 +248,9 @@ export default function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Minimálně 8 znaků"
-                minLength={8}
               />
               <p className="mt-1 text-xs text-gray-500">
-                Musí obsahovat velkéch malé písmeno, číslo a speciální znak
+                Heslo musí obsahovat velkéch malé písmeno, číslo a speciální znak
               </p>
             </div>
           </div>
@@ -272,19 +273,35 @@ export default function Register() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Vytváří se účet...' : 'Vytvořit účet'}
+              {loading ? 'Vytvářím účet...' : 'Vytvořit účet'}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Již máte účet?{' '}
+              Už máte účet?{' '}
               <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Přihlásit se
+                Přihlaste se zde
               </Link>
             </p>
           </div>
         </form>
+
+        {/* Terms notice */}
+        <div className="pt-6 border-t border-gray-200">
+          <div className="text-center">
+            <p className="text-xs text-gray-500">
+              Vytvořením účtu souhlasíte s našimi{' '}
+              <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+                Podmínkami používání
+              </Link>{' '}
+              a{' '}
+              <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+                Zásadami ochrany soukromí
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

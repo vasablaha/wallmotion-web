@@ -16,7 +16,8 @@ const DeviceSchema = new Schema<IDevice>({
   fingerprint: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
   },
   name: {
     type: String,
@@ -32,7 +33,8 @@ const DeviceSchema = new Schema<IDevice>({
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
+    index: true
   },
   macModel: {
     type: String,
@@ -49,13 +51,14 @@ const DeviceSchema = new Schema<IDevice>({
   cognitoId: {
     type: String,
     required: true,
-    ref: 'User'
+    ref: 'User',
+    index: true
   }
 })
 
-// Indexy pro rychlejší vyhledávání
-DeviceSchema.index({ fingerprint: 1 })
-DeviceSchema.index({ cognitoId: 1 })
-DeviceSchema.index({ isActive: 1 })
+// Odstranění explicitních indexů - jsou už definované v schema s "index: true"
+// DeviceSchema.index({ fingerprint: 1 }) // DUPLIKÁT
+// DeviceSchema.index({ cognitoId: 1 }) // DUPLIKÁT
+// DeviceSchema.index({ isActive: 1 }) // DUPLIKÁT
 
 export default mongoose.models.Device || mongoose.model<IDevice>('Device', DeviceSchema)

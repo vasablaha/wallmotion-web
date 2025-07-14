@@ -14,18 +14,21 @@ const UserSchema = new Schema<IUser>({
   cognitoId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
   },
   email: {
     type: String,
     required: true,
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    index: true
   },
   stripeCustomerId: {
     type: String,
-    default: null
+    default: null,
+    index: true
   },
   purchaseDate: {
     type: Date,
@@ -40,9 +43,9 @@ const UserSchema = new Schema<IUser>({
   timestamps: true // Automaticky vytvoří createdAt a updatedAt
 })
 
-// Indexy pro rychlejší vyhledávání
-UserSchema.index({ cognitoId: 1 })
-UserSchema.index({ email: 1 })
-UserSchema.index({ stripeCustomerId: 1 })
+// Odstranění explicitních indexů - jsou už definované v schema s "index: true"
+// UserSchema.index({ cognitoId: 1 }) // DUPLIKÁT
+// UserSchema.index({ email: 1 }) // DUPLIKÁT  
+// UserSchema.index({ stripeCustomerId: 1 }) // DUPLIKÁT
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

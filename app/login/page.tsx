@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 
-export default function Login() {
+function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -71,9 +71,10 @@ export default function Login() {
         router.push('/')
       }, 1500)
       
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Přihlášení se nezdařilo'
       console.error('❌ Login error:', error)
-      setError(error.message || 'Přihlášení se nezdařilo')
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -113,10 +114,13 @@ export default function Login() {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Přihlaste se do účtu
+            Přihlaste se do svého účtu
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Pokračujte v používání WallMotion
+            Nebo{' '}
+            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              si vytvořte nový účet
+            </Link>
           </p>
         </div>
 
@@ -138,7 +142,6 @@ export default function Login() {
                 placeholder="váš@email.cz"
               />
             </div>
-
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Heslo
@@ -226,5 +229,24 @@ export default function Login() {
         </div>
       </div>
     </div>
+  )
+}
+
+function LoginLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Načítá se přihlášení...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={<LoginLoadingFallback />}>
+      <LoginContent />
+    </Suspense>
   )
 }

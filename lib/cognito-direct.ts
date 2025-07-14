@@ -33,7 +33,7 @@ export class DirectCognitoAuth {
         user: result.UserSub,
         userConfirmed: result.UserConfirmed
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Direct signup error:', error)
       throw error
     }
@@ -56,7 +56,7 @@ export class DirectCognitoAuth {
       console.log('✅ Direct confirm success:', result)
       
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Direct confirm error:', error)
       throw error
     }
@@ -86,7 +86,7 @@ export class DirectCognitoAuth {
         idToken: result.AuthenticationResult?.IdToken,
         refreshToken: result.AuthenticationResult?.RefreshToken
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Direct signin error:', error)
       throw error
     }
@@ -108,7 +108,7 @@ export class DirectCognitoAuth {
       console.log('✅ Direct resend success:', result)
       
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Direct resend error:', error)
       throw error
     }

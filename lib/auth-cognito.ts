@@ -33,7 +33,13 @@ export async function validateCognitoToken(req: NextRequest) {
 
     // Extrakce user informací
     const cognitoId = cognitoUser.Username!
-    const email = cognitoUser.UserAttributes.find(attr => attr.Name === 'email')?.Value!
+    const emailAttribute = cognitoUser.UserAttributes.find(attr => attr.Name === 'email')
+    
+    if (!emailAttribute || !emailAttribute.Value) {
+      return null
+    }
+    
+    const email = emailAttribute.Value
 
     // Připojit k databázi
     await dbConnect()

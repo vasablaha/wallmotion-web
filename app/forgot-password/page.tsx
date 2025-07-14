@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ForgotPassword() {
@@ -11,7 +10,6 @@ export default function ForgotPassword() {
   const [success, setSuccess] = useState('')
   const [emailSent, setEmailSent] = useState(false)
   
-  const router = useRouter()
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,9 +31,10 @@ export default function ForgotPassword() {
       setEmailSent(true)
       setSuccess('Pokud existuje účet s tímto emailem, pošleme vám instrukce pro reset hesla.')
       
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Nepodařilo se odeslat instrukce pro reset hesla'
       console.error('❌ Password reset error:', error)
-      setError(error.message || 'Nepodařilo se odeslat instrukce pro reset hesla')
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
