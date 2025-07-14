@@ -118,29 +118,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setLoading(true)
-      console.log('📝 Attempting sign up for:', email)
+      console.log('📝 Attempting DIRECT Cognito sign up for:', email)
       
-      const clientId = process.env.USER_POOL_CLIENT_ID_AWS!
-      const clientSecret = getClientSecret()
-      const secretHash = generateSecretHash(email.toLowerCase().trim(), clientId, clientSecret)
+      // Používáme DirectCognitoAuth místo standardního signUp
+      const result = await DirectCognitoAuth.signUp(email, password)
       
-      console.log('🔑 SECRET_HASH generated for signup')
-      
-      const result = await signUp({
-        username: email.toLowerCase().trim(),
-        password,
-        options: {
-          userAttributes: {
-            email: email.toLowerCase().trim()
-          }
-        }
-      })
-      
-      console.log('✅ Sign up result:', result)
+      console.log('✅ Direct sign up result:', result)
       return result
     } catch (error: any) {
-      console.error('❌ Sign up error:', error)
-      throw error
+      console.error('❌ Direct sign up error:', error)
+      
+      switch (error.name) {
+        case 'UsernameExistsException':
+          throw new Error('Účet s tímto emailem již existuje')
+        case 'InvalidPasswordException':
+          throw new Error('Heslo musí obsahovat velkéch malé písmeno, číslo a speciální znak')
+        case 'InvalidParameterException':
+          throw new Error('Neplatný formát emailu')
+        default:
+          throw new Error(error.message || 'Registrace se nezdařila')
+      }
     } finally {
       setLoading(false)
     }
@@ -167,26 +164,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setLoading(true)
+      console.log('📧 Attempting DIRECT Cognito confirm sign up for:', email)
       
-      const clientId = process.env.USER_POOL_CLIENT_ID_AWS!
-      const clientSecret = getClientSecret()
-      const secretHash = generateSecretHash(email.toLowerCase().trim(), clientId, clientSecret)
+      // Používáme DirectCognitoAuth místo standardního confirmSignUp
+      const result = await DirectCognitoAuth.confirmSignUp(email, code)
       
-      const result = await confirmSignUp({
-        username: email.toLowerCase().trim(),
-        confirmationCode: code,
-        options: {
-          clientMetadata: {
-            SECRET_HASH: secretHash
-          }
-        }
-      })
-      
-      console.log('✅ Email confirmed:', email)
+      console.log('✅ Direct confirm sign up result:', result)
       return result
     } catch (error: any) {
-      console.error('❌ Confirm sign up error:', error)
-      throw error
+      console.error('❌ Direct confirm sign up error:', error)
+      
+      switch (error.name) {
+        case 'CodeMismatchException':
+          throw new Error('Neplatný ověřovací kód')
+        case 'ExpiredCodeException':
+          throw new Error('Ověřovací kód vypršel. Požádejte o nový.')
+        default:
+          throw new Error(error.message || 'Ověření se nezdařilo')
+      }
     } finally {
       setLoading(false)
     }
@@ -198,23 +193,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const clientId = process.env.USER_POOL_CLIENT_ID_AWS!
-      const clientSecret = getClientSecret()
-      const secretHash = generateSecretHash(email.toLowerCase().trim(), clientId, clientSecret)
+      console.log('📤 Attempting DIRECT Cognito resend confirmation code for:', email)
       
-      const result = await resendSignUpCode({
-        username: email.toLowerCase().trim(),
-        options: {
-          clientMetadata: {
-            SECRET_HASH: secretHash
-          }
-        }
-      })
+      // Používáme DirectCognitoAuth místo standardního resendSignUpCode
+      const result = await DirectCognitoAuth.resendConfirmationCode(email)
       
-      console.log('✅ Confirmation code resent:', email)
+      console.log('✅ Direct resend confirmation code result:', result)
       return result
     } catch (error: any) {
-      console.error('❌ Resend confirmation error:', error)
+      console.error('❌ Direct resend confirmation code error:', error)
       throw error
     }
   }
