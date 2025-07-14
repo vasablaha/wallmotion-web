@@ -67,7 +67,7 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
                   onClick={handleSignOut}
                   className="text-gray-500 hover:text-red-600 transition-colors font-medium text-sm"
                 >
-                  Odhlásit
+                  Logout
                 </button>
               </div>
             ) : (
@@ -77,13 +77,13 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
                   href="/login"
                   className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
                 >
-                  Přihlášení
+                  Login
                 </Link>
                 <Link
                   href="/register"
                   className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
                 >
-                  Registrace
+                  Register
                 </Link>
                 <button
                   onClick={onPurchase}
@@ -112,7 +112,7 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
                   href="/login"
                   className="text-sm text-gray-700 hover:text-purple-600 transition-colors font-medium"
                 >
-                  Přihlášení
+                  Login
                 </Link>
               </div>
             )}
