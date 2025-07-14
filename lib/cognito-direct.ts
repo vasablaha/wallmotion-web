@@ -92,6 +92,35 @@ export class DirectCognitoAuth {
     }
   }
   
+  static async refreshToken(refreshToken: string, email: string) {
+    try {
+      const clientId = getClientId()
+      const clientSecret = getClientSecret()
+      const secretHash = generateSecretHash(email.toLowerCase().trim(), clientId, clientSecret)
+      
+      const command = new InitiateAuthCommand({
+        ClientId: clientId,
+        AuthFlow: 'REFRESH_TOKEN_AUTH',
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken,
+          SECRET_HASH: secretHash
+        }
+      })
+      
+      const result = await cognitoClient.send(command)
+      console.log('✅ Direct refresh success:', result)
+      
+      return {
+        accessToken: result.AuthenticationResult?.AccessToken,
+        idToken: result.AuthenticationResult?.IdToken,
+        refreshToken: result.AuthenticationResult?.RefreshToken || refreshToken // Refresh token může zůstat stejný
+      }
+    } catch (error: unknown) {
+      console.error('❌ Direct refresh error:', error)
+      throw error
+    }
+  }
+  
   static async resendConfirmationCode(email: string) {
     try {
       const clientId = getClientId()

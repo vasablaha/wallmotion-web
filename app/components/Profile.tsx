@@ -63,7 +63,28 @@ export default function Profile() {
     const storedAuth = localStorage.getItem('wallmotion_auth')
     if (storedAuth) {
       const authData = JSON.parse(storedAuth)
-      return authData.accessToken
+      
+      // Kontrola, zda token není příliš starý (přes 24 hodin)
+      const loginTime = authData.loginTime || 0
+      const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+      
+      if (hoursSinceLogin > 24) {
+        console.log('🕐 Token příliš starý, odhlašování...')
+        localStorage.removeItem('wallmotion_auth')
+        await signOut()
+        router.push('/login')
+        return null
+      }
+      
+      // Ujisti se, že máme email pro případný refresh
+      if (!authData.email && !authData.username) {
+        console.log('⚠️ Missing email/username in stored auth, adding...')
+        authData.email = user?.username || user?.email
+        localStorage.setItem('wallmotion_auth', JSON.stringify(authData))
+      }
+      
+      // Vrať celý JSON jako token - server ho parsuje
+      return JSON.stringify(authData)
     }
     return null
   }
@@ -85,6 +106,15 @@ export default function Profile() {
         }
       })
 
+      if (userResponse.status === 401) {
+        // Token expiroval, přesměruj na login
+        console.log('🕐 Token expired, redirecting to login')
+        localStorage.removeItem('wallmotion_auth')
+        await signOut()
+        router.push('/login?message=Relace vypršela, přihlaste se znovu')
+        return
+      }
+
       if (userResponse.ok) {
         const userData = await userResponse.json()
         setUserData(userData.user)
@@ -96,6 +126,15 @@ export default function Profile() {
           'Authorization': `Bearer ${token}`
         }
       })
+
+      if (devicesResponse.status === 401) {
+        // Token expiroval, přesměruj na login
+        console.log('🕐 Token expired, redirecting to login')
+        localStorage.removeItem('wallmotion_auth')
+        await signOut()
+        router.push('/login?message=Relace vypršela, přihlaste se znovu')
+        return
+      }
 
       if (devicesResponse.ok) {
         const devicesData = await devicesResponse.json()
@@ -158,6 +197,7 @@ export default function Profile() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         setDevices(devices.map(device => 
           device._id === deviceId 
             ? { ...device, name: newDeviceName.trim() }

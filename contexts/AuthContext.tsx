@@ -33,6 +33,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isAmplifyReady, setIsAmplifyReady] = useState(false)
 
+  // Kontrola expiraci tokenu
+  const checkTokenExpiration = () => {
+    if (typeof window === 'undefined') return
+
+    const storedAuth = localStorage.getItem('wallmotion_auth')
+    if (!storedAuth) return
+
+    try {
+      const authData = JSON.parse(storedAuth)
+      const loginTime = authData.loginTime || 0
+      const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+      
+      // Pokud token je starší než 23 hodin, pokus se ho obnovit
+      if (hoursSinceLogin > 23) {
+        console.log('🔄 Token blízko expiraci, pokus o refresh...')
+        // Můžeme implementovat automatický refresh zde později
+      }
+      
+      // Pokud token je starší než 24 hodin, vymaž ho
+      if (hoursSinceLogin > 24) {
+        console.log('🕐 Token expiroval, odhlašování...')
+        localStorage.removeItem('wallmotion_auth')
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Chyba při kontrole expiraci tokenu:', error)
+      localStorage.removeItem('wallmotion_auth')
+      setUser(null)
+    }
+  }
+
   useEffect(() => {
     // Wait for Amplify to be configured
     const initializeAuth = async () => {
@@ -60,6 +91,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
   }, [])
+
+  // useEffect pro pravidelnou kontrolu expiraci tokenů
+  useEffect(() => {
+    if (!user) return
+
+    // Zkontroluj expiraci tokenu každých 10 minut
+    const interval = setInterval(checkTokenExpiration, 10 * 60 * 1000)
+    
+    return () => clearInterval(interval)
+  }, [user])
   
   // Samostatná funkce pro check usera bez závislosti na isAmplifyReady state
   const checkUserManual = async () => {
@@ -165,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             idToken: result.idToken,
             refreshToken: result.refreshToken,
             username: email,
+            email: email, // Přidáme email explicitně pro refresh
             loginTime: Date.now()
           }
           

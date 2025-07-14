@@ -18,7 +18,26 @@ export async function validateCognitoToken(req: NextRequest) {
       return null
     }
 
-    const accessToken = authHeader.replace('Bearer ', '')
+    let accessToken = authHeader.replace('Bearer ', '')
+
+    // Pokud token vypadá jako JSON z localStorage, parsuj ho
+    if (accessToken.startsWith('{')) {
+      try {
+        const storedAuthData = JSON.parse(accessToken)
+        accessToken = storedAuthData.accessToken
+        
+        // Kontrola stáří tokenů z localStorage
+        const loginTime = storedAuthData.loginTime || 0
+        const hoursSinceLogin = (Date.now() - loginTime) / (1000 * 60 * 60)
+        
+        if (hoursSinceLogin > 1) { // Tokeny jsou starší než 1 hodina
+          console.log('🕐 Token is older than 1 hour, rejecting')
+          return null
+        }
+      } catch (e) {
+        console.log('Failed to parse token JSON, using as-is')
+      }
+    }
 
     // Ověření tokenu přes Cognito
     const getUserCommand = new GetUserCommand({
@@ -53,7 +72,8 @@ export async function validateCognitoToken(req: NextRequest) {
       user = new User({
         cognitoId,
         email,
-        licenseType: 'NONE'
+        licenseType: 'NONE',
+        licensesCount: 0
       })
       await user.save()
     }
@@ -64,7 +84,13 @@ export async function validateCognitoToken(req: NextRequest) {
       user: user.toObject()
     }
 
-  } catch (error) {
+  } catch (error: any) {
+    // Pokud je token expirovaný, jednoduše vrať null
+    if (error.name === 'NotAuthorizedException') {
+      console.log('🕐 Token expired or invalid, user needs to login again')
+      return null
+    }
+    
     console.error('Cognito token validation error:', error)
     return null
   }
