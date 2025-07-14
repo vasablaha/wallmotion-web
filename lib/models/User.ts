@@ -6,6 +6,7 @@ export interface IUser extends Document {
   stripeCustomerId?: string
   purchaseDate?: Date
   licenseType: 'NONE' | 'LIFETIME' | 'SUBSCRIPTION'
+  licensesCount: number // Počet zakoupených licencí
   createdAt: Date
   updatedAt: Date
 }
@@ -38,14 +39,14 @@ const UserSchema = new Schema<IUser>({
     type: String,
     enum: ['NONE', 'LIFETIME', 'SUBSCRIPTION'],
     default: 'NONE'
+  },
+  licensesCount: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true // Automaticky vytvoří createdAt a updatedAt
 })
-
-// Odstranění explicitních indexů - jsou už definované v schema s "index: true"
-// UserSchema.index({ cognitoId: 1 }) // DUPLIKÁT
-// UserSchema.index({ email: 1 }) // DUPLIKÁT  
-// UserSchema.index({ stripeCustomerId: 1 }) // DUPLIKÁT
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

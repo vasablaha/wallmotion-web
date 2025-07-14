@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     }
     
     console.log('✅ User authenticated:', auth.email)
+    console.log('📊 Current licenses count:', auth.user.licensesCount || 0)
     
     const body = await req.json()
     const priceId = body?.priceId || process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
@@ -39,17 +40,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Kontrola, zda už nemá licenci
-    if (auth.user.licenseType !== 'NONE') {
-      return NextResponse.json({ 
-        error: 'Již máte aktivní licenci. Pokud máte problémy, kontaktujte podporu.' 
-      }, { status: 400 })
-    }
-
     const origin = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     console.log('🌐 Origin:', origin)
 
     console.log('🎯 Creating Stripe checkout session...')
+    
+    // Určení textu podle toho, zda už má uživatel licence
+    const currentLicenses = auth.user.licensesCount || 0
+    const isFirstLicense = currentLicenses === 0
     
     const session = await stripe.checkout.sessions.create({
       line_items: [
@@ -60,16 +58,19 @@ export async function POST(req: NextRequest) {
       ],
       mode: 'payment',
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/`,
+      cancel_url: `${origin}/profile`,
       customer_email: auth.email,
       billing_address_collection: 'required',
       metadata: {
         cognitoId: auth.cognitoId, // Klíčové pro webhook
-        userEmail: auth.email
+        userEmail: auth.email,
+        currentLicensesCount: currentLicenses.toString(),
+        isFirstLicense: isFirstLicense.toString()
       }
     })
 
     console.log('✅ Checkout session created:', session.id)
+    console.log(`📝 Metadata: First license: ${isFirstLicense}, Current count: ${currentLicenses}`)
     
     return NextResponse.json({ 
       sessionId: session.id 

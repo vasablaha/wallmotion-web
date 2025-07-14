@@ -50,24 +50,52 @@ export async function POST(req: NextRequest) {
         try {
           await dbConnect()
           
-          // Aktivace licence
+          // Najít uživatele
+          const user = await User.findOne({ cognitoId })
+          
+          if (!user) {
+            console.error(`❌ User not found for Cognito ID: ${cognitoId}`)
+            return NextResponse.json({ received: true })
+          }
+          
+          // Zvýšit počet licencí o 1
+          const newLicensesCount = (user.licensesCount || 0) + 1
+
+          type UpdateData = {
+            licensesCount: number
+            stripeCustomerId: string
+            licenseType?: 'LIFETIME'
+            purchaseDate?: Date
+          }
+
+          // Aktivace licence - pokud je to první licence, nastav licenseType na LIFETIME
+          const updateData: UpdateData = {
+            licensesCount: newLicensesCount,
+            stripeCustomerId: session.customer as string
+          }
+          
+          // Pokud je to první licence, nastav licenseType a purchaseDate
+          if (user.licenseType === 'NONE') {
+            updateData.licenseType = 'LIFETIME'
+            updateData.purchaseDate = new Date()
+          }
+          
           const updateResult = await User.updateOne(
             { cognitoId },
-            {
-              licenseType: 'LIFETIME',
-              purchaseDate: new Date(),
-              stripeCustomerId: session.customer as string
-            }
+            updateData
           )
           
           if (updateResult.matchedCount > 0) {
             console.log(`✅ Licence aktivována pro Cognito ID: ${cognitoId}`)
+            console.log(`📊 Nový počet licencí: ${newLicensesCount}`)
             
-            // TODO: Odeslání emailu s download linkem
+            // TODO: Odeslání emailu s potvrzením
             if (customerEmail) {
-              console.log('📧 Would send download email to:', customerEmail)
-              // await sendDownloadEmail({
+              console.log('📧 Would send license confirmation email to:', customerEmail)
+              console.log(`📧 License count: ${newLicensesCount}`)
+              // await sendLicenseConfirmationEmail({
               //   email: customerEmail,
+              //   licensesCount: newLicensesCount,
               //   downloadUrl: process.env.DOWNLOAD_URL!,
               // })
             }
@@ -91,3 +119,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 }
+
+/*
+// Funkce pro odeslání emailu s potvrzením (implementujte podle potřeby)
+async function sendLicenseConfirmationEmail(data: {
+  email: string
+  licensesCount: number
+  downloadUrl: string
+}) {
+  // Implementace odeslání emailu
+  console.log('TODO: Send license confirmation email:', data)
+}
+  */

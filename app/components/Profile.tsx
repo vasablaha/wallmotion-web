@@ -30,6 +30,7 @@ interface UserData {
   email: string
   licenseType: 'NONE' | 'LIFETIME'
   purchaseDate?: string
+  licensesCount?: number
   createdAt: string
 }
 
@@ -157,7 +158,6 @@ export default function Profile() {
       })
 
       if (response.ok) {
-        const data = await response.json()
         setDevices(devices.map(device => 
           device._id === deviceId 
             ? { ...device, name: newDeviceName.trim() }
@@ -210,6 +210,18 @@ export default function Profile() {
     }
   }
 
+  // Výpočet počtu dostupných licencí
+  const getLicenseInfo = () => {
+    if (!userData) return { hasLicense: false, devicesUsed: 0, maxDevices: 0 }
+    
+    const hasLicense = userData.licenseType === 'LIFETIME'
+    const devicesUsed = devices.length
+    // Počet licencí určuje kolik zařízení může uživatel mít
+    const maxDevices = userData.licensesCount || (hasLicense ? 1 : 0)
+    
+    return { hasLicense, devicesUsed, maxDevices }
+  }
+
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -229,6 +241,8 @@ export default function Profile() {
       </div>
     )
   }
+
+  const { hasLicense, devicesUsed, maxDevices } = getLicenseInfo()
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -293,48 +307,81 @@ export default function Profile() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <ShoppingBagIcon className="w-6 h-6 mr-2 text-blue-600" />
-                Moje licence
+                Licence a zařízení
               </h2>
             </div>
 
-            {userData?.licenseType === 'LIFETIME' ? (
-              <div className="border border-green-200 bg-green-50 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-green-900">Lifetime licence</h3>
-                    <p className="text-sm text-green-700">
-                      Zakoupena: {userData.purchaseDate ? new Date(userData.purchaseDate).toLocaleDateString('cs-CZ') : 'N/A'}
-                    </p>
-                    <p className="text-sm text-green-700">
-                      Platnost: Doživotní
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    Aktivní
+            <div className="space-y-6">
+              {/* Přehled licencí */}
+              <div className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-semibold text-gray-900">Stav licencí</h3>
+                  <span className="text-sm text-gray-600">
+                    {devicesUsed} / {maxDevices > 0 ? maxDevices : '0'} zařízení
                   </span>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <ShoppingBagIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">Nemáte žádnou aktivní licenci</p>
                 
-                {/* Nákup licence */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={handlePurchaseLicense}
-                    className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="text-center">
-                      <h4 className="font-medium mb-2">WallMotion Licence</h4>
-                      <p className="text-sm text-gray-600 mb-3">Doživotní přístup k aplikaci</p>
-                      <span className="text-2xl font-bold text-blue-600">$10</span>
-                      <p className="text-xs text-gray-500 mt-1">Jednorázová platba</p>
+                {hasLicense ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-700">✓ Aktivní licence</span>
+                      <span className="text-gray-600">
+                        Zakoupena: {userData?.purchaseDate ? new Date(userData.purchaseDate).toLocaleDateString('cs-CZ') : 'N/A'}
+                      </span>
                     </div>
-                  </button>
-                </div>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${devicesUsed >= maxDevices ? 'bg-red-500' : 'bg-green-500'}`}
+                        style={{ width: `${maxDevices > 0 ? (devicesUsed / maxDevices) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                    
+                    {devicesUsed >= maxDevices && (
+                      <p className="text-sm text-red-600">
+                        ⚠️ Dosáhli jste limitu zařízení. Kupte další licenci pro registraci dalšího zařízení.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600 mb-2">Nemáte žádnou aktivní licenci</p>
+                    <p className="text-sm text-gray-500">Kupte si první licenci pro registraci zařízení</p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Nákup licence */}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  {hasLicense ? 'Koupit další licenci' : 'Koupit první licenci'}
+                </h3>
+                
+                <button
+                  onClick={handlePurchaseLicense}
+                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                >
+                  <div className="text-center">
+                    <h4 className="font-medium mb-2">Licence pro 1 zařízení</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {hasLicense 
+                        ? 'Přidejte licence pro další zařízení'
+                        : 'Doživotní přístup k aplikaci'
+                      }
+                    </p>
+                    <span className="text-2xl font-bold text-blue-600">$10</span>
+                    <p className="text-xs text-gray-500 mt-1">Jednorázová platba za zařízení</p>
+                  </div>
+                </button>
+                
+                {hasLicense && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Každá licence umožňuje registraci jednoho dalšího zařízení
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Zařízení */}

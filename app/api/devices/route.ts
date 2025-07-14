@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Kontrola licence
-    if (auth.user.licenseType === 'NONE') {
+    // Kontrola licence - uživatel musí mít aspoň jednu licenci
+    if (auth.user.licenseType === 'NONE' || (auth.user.licensesCount || 0) === 0) {
       return NextResponse.json({ error: 'Nemáte platnou licenci' }, { status: 403 })
     }
     
@@ -68,15 +68,17 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
     
-    // Kontrola limit zařízení (1 aktivní zařízení na uživatele)
+    // Kontrola limit zařízení podle počtu licencí
     const existingDevices = await Device.countDocuments({
       cognitoId: auth.cognitoId,
       isActive: true 
     })
     
-    if (existingDevices >= 1) {
+    const maxDevices = auth.user.licensesCount || 0
+    
+    if (existingDevices >= maxDevices) {
       return NextResponse.json({ 
-        error: 'Můžete mít registrované pouze jedno zařízení. Odeberte stávající zařízení pro registraci nového.'
+        error: `Můžete mít registrováno maximálně ${maxDevices} ${maxDevices === 1 ? 'zařízení' : 'zařízení'}. Kupte další licenci nebo odeberte stávající zařízení.`
       }, { status: 400 })
     }
     
