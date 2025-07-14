@@ -1,3 +1,5 @@
+// app/page.tsx - Upravený s authentication check
+
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -6,6 +8,8 @@ import HeroSection from './components/HeroSection'
 import FeaturesSection from './components/FeaturesSection'
 import VideoGallery from './components/VideoGallery'
 import ProfileModal from './components/ProfileModal'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 import { ComputerDesktopIcon, } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/solid'
@@ -14,6 +18,9 @@ import { CheckIcon } from '@heroicons/react/24/solid'
 export default function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -22,57 +29,25 @@ export default function HomePage() {
   }, [])
 
   const handlePurchase = async () => {
-    try {
-      console.log('🚀 Starting checkout process...')
-      console.log('💰 Price ID:', process.env.NEXT_PUBLIC_STRIPE_PRICE_ID)
-      console.log('🔑 Publishable key exists:', !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-      console.log('🔍 Testing API availability...')
-      const testResponse = await fetch('/api/test')
-      const testData = await testResponse.json()
-      console.log('✅ API test response:', testData)
-      
-      if (!process.env.NEXT_PUBLIC_STRIPE_PRICE_ID) {
-        alert('❌ Chybí NEXT_PUBLIC_STRIPE_PRICE_ID v .env.local')
-        return
-      }
-      if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-        alert('❌ Chybí NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY v .env.local')
-        return
-      }
-
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID })
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        if (response.status === 405) {
-          alert('❌ API endpoint nenalezen! Zkontroluj, že máš soubor app/api/create-checkout/route.ts')
-        } else {
-          alert(`API Error (${response.status}): ${errorText}`)
-        }
-        return
-      }
-
-      const data = await response.json()
-      if (!data.sessionId) {
-        alert('No session ID received from API')
-        return
-      }
-
-      const stripeModule = await import('@stripe/stripe-js')
-      const stripe = await stripeModule.loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
-      if (stripe) {
-        await stripe.redirectToCheckout({ sessionId: data.sessionId })
-      } else {
-        alert('Failed to load Stripe library')
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      alert(`Detailed error: ${errorMessage}`)
+    console.log('🛒 Purchase button clicked')
+    console.log('🔐 Auth status:', { user: !!user, authLoading, username: user?.username })
+    
+    // Čekáme na načtení auth stavu
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...')
+      return
     }
+    
+    // Pokud uživatel není přihlášený, přesměruj na login
+    if (!user) {
+      console.log('🚫 User not logged in, redirecting to login')
+      router.push('/login?message=Please sign in to purchase a license')
+      return
+    }
+    
+    // Pokud je přihlášený, přesměruj na profile (kde může koupit licenci)
+    console.log('✅ User logged in, redirecting to profile')
+    router.push('/profile')
   }
 
   return (
@@ -116,9 +91,16 @@ export default function HomePage() {
             </div>
             <button
               onClick={handlePurchase}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
+              disabled={authLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Get WallMotion for $10
+              {authLoading ? (
+                'Loading...'
+              ) : user ? (
+                'Go to My Profile'
+              ) : (
+                'Get WallMotion for $10'
+              )}
             </button>
             <p className="text-sm text-gray-500 mt-4">
               30-day money-back guarantee • Secure payment via Stripe

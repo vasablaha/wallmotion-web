@@ -1,11 +1,27 @@
+// app/components/HeroSection.tsx - Upravený s auth aware button
+
 import React from 'react'
 import { ChevronRightIcon, PlayIcon } from '@heroicons/react/24/solid'
+import { useAuth } from '@/contexts/AuthContext'
 
 type HeroSectionProps = {
   onPurchase: () => Promise<void>
 }
 
 export default function HeroSection({ onPurchase }: HeroSectionProps) {
+  const { user, loading: authLoading } = useAuth()
+  
+  const getButtonText = () => {
+    if (authLoading) return 'Loading...'
+    if (user) return 'Go to My Profile'
+    return 'Get WallMotion - $10'
+  }
+  
+  const getButtonIcon = () => {
+    if (authLoading) return null
+    return <ChevronRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+  }
+
   return (
     <section className="pt-24 pb-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10" />
@@ -27,10 +43,11 @@ export default function HeroSection({ onPurchase }: HeroSectionProps) {
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
             <button
               onClick={onPurchase}
-              className="group bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+              disabled={authLoading}
+              className="group bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
             >
-              <span>Get WallMotion - $10</span>
-              <ChevronRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <span>{getButtonText()}</span>
+              {getButtonIcon()}
             </button>
             <button className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors font-semibold">
               <PlayIcon className="w-6 h-6" />
