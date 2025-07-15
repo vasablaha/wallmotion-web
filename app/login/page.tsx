@@ -31,44 +31,29 @@ function LoginContent() {
 
   // Redirect if already logged in - but wait for auth to load
   useEffect(() => {
-    console.log('🔐 Login: Auth state:', { user: !!user, authLoading, username: user?.username })
+    if (authLoading) return
     
-    if (authLoading) {
-      console.log('⏳ Login: Auth loading, waiting...')
-      return
-    }
-    
-    if (user) {
-      console.log('✅ Login: User already logged in')
-      
-      if (isFromMacOSApp) {
-        // Redirect to macOS callback
-        handleMacOSCallback(user)
-      } else {
-        // Normal redirect to home
-        router.push('/')
-      }
+    // Pouze pro web (ne macOS) - automatické přesměrování
+    if (user && !isFromMacOSApp) {
+      console.log('✅ User already logged in, redirecting to home')
+      router.push('/')
     }
   }, [user, authLoading, router, isFromMacOSApp])
 
-  const handleMacOSCallback = (userData: { username?: string; [key: string]: unknown }) => {
+const handleMacOSCallback = (userData: { username?: string; [key: string]: unknown }) => {
     console.log('🍎 Handling macOS callback for user:', userData?.username)
     
-    // Get auth data from localStorage (created by DirectCognitoAuth)
     const authData = localStorage.getItem('wallmotion_auth')
     
     if (authData) {
       try {        
-        // Create callback URL with auth token
         const encodedToken = encodeURIComponent(authData)
         const callbackURL = `wallmotion://auth?token=${encodedToken}`
         
         console.log('🔗 Redirecting to macOS app:', callbackURL)
         
-        // Show success message
         setSuccess('Sign in successful! Redirecting to WallMotion app...')
         
-        // Redirect back to macOS app
         setTimeout(() => {
           window.location.href = callbackURL
         }, 1500)
