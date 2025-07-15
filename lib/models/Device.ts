@@ -1,4 +1,3 @@
-// Aktualizace Device modelu - přidat nové stavy
 // lib/models/Device.ts
 
 import mongoose, { Schema, Document } from 'mongoose'
@@ -6,16 +5,17 @@ import mongoose, { Schema, Document } from 'mongoose'
 export interface IDevice extends Document {
   fingerprint: string
   name: string
+  deviceDisplayName?: string  // NOVÉ - vlastní název zařízení nastavený uživatelem
   registeredAt: Date
   lastSeen: Date
   isActive: boolean
-  isLoggedIn: boolean  // NOVÉ - zda je uživatel přihlášen
-  isRemoved: boolean   // NOVÉ - zda bylo zařízení odebráno (blocked fingerprint)
+  isLoggedIn: boolean
+  isRemoved: boolean
   macModel?: string
   macosVersion?: string
   appVersion?: string
   cognitoId: string
-  removedAt?: Date     // NOVÉ - kdy bylo odebráno
+  removedAt?: Date
 }
 
 const DeviceSchema = new Schema<IDevice>({
@@ -28,6 +28,10 @@ const DeviceSchema = new Schema<IDevice>({
   name: {
     type: String,
     required: true
+  },
+  deviceDisplayName: {  // NOVÉ - volitelný vlastní název
+    type: String,
+    default: null
   },
   registeredAt: {
     type: Date,
@@ -42,12 +46,12 @@ const DeviceSchema = new Schema<IDevice>({
     default: true,
     index: true
   },
-  isLoggedIn: {  // NOVÉ
+  isLoggedIn: {
     type: Boolean,
     default: true,
     index: true
   },
-  isRemoved: {   // NOVÉ
+  isRemoved: {
     type: Boolean,
     default: false,
     index: true
@@ -70,7 +74,7 @@ const DeviceSchema = new Schema<IDevice>({
     ref: 'User',
     index: true
   },
-  removedAt: {   // NOVÉ
+  removedAt: {
     type: Date,
     default: null
   }

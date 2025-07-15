@@ -16,6 +16,7 @@ import {
 interface Device {
   _id: string
   name: string
+  deviceDisplayName?: string  // NOVÉ - vlastní název zařízení
   fingerprint: string
   isActive: boolean
   lastSeen: string
@@ -24,6 +25,7 @@ interface Device {
   appVersion?: string
   registeredAt: string
 }
+
 
 interface UserData {
   _id: string
@@ -181,43 +183,47 @@ const getAuthToken = useCallback(async () => {
   }
 
   const handleRenameDevice = async (deviceId: string) => {
-    if (!newDeviceName.trim()) {
-      setError('Device name cannot be empty')
-      return
-    }
-
-    try {
-      const token = await getAuthToken()
-      
-      const response = await fetch(`/api/devices?id=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name: newDeviceName.trim() })
-      })
-
-      if (response.ok) {
-        await response.json() // Remove unused variable
-        setDevices(devices.map(device => 
-          device._id === deviceId 
-            ? { ...device, name: newDeviceName.trim() }
-            : device
-        ))
-        setEditingDevice(null)
-        setNewDeviceName('')
-        setSuccess('Device name was successfully changed')
-        setTimeout(() => setSuccess(''), 3000)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to rename device')
-      }
-    } catch (error) {
-      console.error('Error renaming device:', error)
-      setError('Failed to rename device')
-    }
+  if (!newDeviceName.trim()) {
+    setError('Device name cannot be empty')
+    return
   }
+
+  try {
+    const token = await getAuthToken()
+    
+    const response = await fetch(`/api/devices?id=${deviceId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        deviceDisplayName: newDeviceName.trim()  // Používáme deviceDisplayName místo name
+      })
+    })
+
+    if (response.ok) {
+      
+      // Aktualizujeme seznam zařízení
+      setDevices(devices.map(device => 
+        device._id === deviceId 
+          ? { ...device, deviceDisplayName: newDeviceName.trim() }
+          : device
+      ))
+      
+      setEditingDevice(null)
+      setNewDeviceName('')
+      setSuccess('Device name was successfully changed')
+      setTimeout(() => setSuccess(''), 3000)
+    } else {
+      const errorData = await response.json()
+      setError(errorData.error || 'Failed to rename device')
+    }
+  } catch (error) {
+    console.error('Error renaming device:', error)
+    setError('Failed to rename device')
+  }
+}
 
   const handlePurchaseLicense = async () => {
     try {
@@ -283,6 +289,10 @@ const getAuthToken = useCallback(async () => {
       </div>
     )
   }
+
+  const getDisplayName = (device: Device): string => {
+  return device.deviceDisplayName || device.name
+}
 
   const { hasLicense, devicesUsed, maxDevices } = getLicenseInfo()
 
@@ -453,8 +463,9 @@ const getAuthToken = useCallback(async () => {
                               type="text"
                               value={newDeviceName}
                               onChange={(e) => setNewDeviceName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                               placeholder="Device name"
+                              autoFocus
                             />
                             <div className="flex space-x-2">
                               <button
@@ -477,17 +488,23 @@ const getAuthToken = useCallback(async () => {
                         ) : (
                           <div>
                             <div className="flex items-center space-x-2">
-                              <h3 className="font-medium text-gray-900">{device.name}</h3>
+                              <h3 className="font-medium text-gray-900">
+                                {getDisplayName(device)}
+                              </h3>
                               <button
                                 onClick={() => {
                                   setEditingDevice(device._id)
-                                  setNewDeviceName(device.name)
+                                  setNewDeviceName(getDisplayName(device))
                                 }}
                                 className="text-gray-400 hover:text-gray-600"
                               >
                                 <PencilIcon className="w-4 h-4" />
                               </button>
                             </div>
+                            {/* Zobrazit původní název, pokud má vlastní deviceDisplayName */}
+                            {device.deviceDisplayName && (
+                              <p className="text-xs text-gray-500">Original: {device.name}</p>
+                            )}
                             {device.macModel && (
                               <p className="text-sm text-gray-600">Model: {device.macModel}</p>
                             )}

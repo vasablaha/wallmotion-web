@@ -155,19 +155,24 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { fingerprint, action } = await req.json()
+    const { searchParams } = new URL(req.url)
+    const deviceId = searchParams.get('id')
     
-    if (!fingerprint) {
+    if (!deviceId) {
       return NextResponse.json({ 
-        error: 'Fingerprint je povinný' 
+        error: 'ID zařízení je povinné' 
       }, { status: 400 })
     }
     
-    const device = await Device.findOne({ 
-      fingerprint, 
-      cognitoId: auth.cognitoId,
-      isRemoved: false  // Pouze neodstraněná zařízení
-    })
+    const { deviceDisplayName } = await req.json()
+    
+    if (!deviceDisplayName || !deviceDisplayName.trim()) {
+      return NextResponse.json({ 
+        error: 'Název zařízení nemůže být prázdný' 
+      }, { status: 400 })
+    }
+    
+    const device = await Device.findById(deviceId)
     
     if (!device) {
       return NextResponse.json({ 
@@ -175,28 +180,34 @@ export async function PUT(req: NextRequest) {
       }, { status: 404 })
     }
     
-    if (action === 'logout') {
-      // Označit jako odhlášené (ale stále aktivní)
-      await Device.findByIdAndUpdate(device._id, {
-        isLoggedIn: false,
-        lastSeen: new Date()
-      })
-      
-      console.log(`Device logged out: ${fingerprint} for user: ${auth.cognitoId}`)
+    if (device.cognitoId !== auth.cognitoId) {
       return NextResponse.json({ 
-        success: true, 
-        message: 'Zařízení bylo odhlášeno' 
-      })
+        error: 'Nemáte oprávnění upravit toto zařízení' 
+      }, { status: 403 })
     }
     
+    // Uložit vlastní název zařízení
+    const updatedDevice = await Device.findByIdAndUpdate(
+      deviceId,
+      { 
+        deviceDisplayName: deviceDisplayName.trim(),
+        lastSeen: new Date()
+      },
+      { new: true }
+    )
+    
+    console.log(`Device renamed: ${device.name} -> ${deviceDisplayName.trim()} by user ${auth.cognitoId}`)
+    
     return NextResponse.json({ 
-      error: 'Neplatná akce' 
-    }, { status: 400 })
+      success: true,
+      device: JSON.parse(JSON.stringify(updatedDevice.toObject())),
+      message: 'Název zařízení byl úspěšně změněn'
+    })
     
   } catch (error) {
-    console.error('Device logout error:', error)
+    console.error('Device rename error:', error)
     return NextResponse.json({ 
-      error: 'Nepodařilo se odhlásit zařízení' 
+      error: 'Nepodařilo se přejmenovat zařízení' 
     }, { status: 500 })
   }
 }
