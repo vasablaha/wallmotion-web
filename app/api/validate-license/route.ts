@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
     
     const { fingerprint, bundleId, version } = await req.json()
     
-    // Validace required fields
     if (!fingerprint) {
       return NextResponse.json({ 
         valid: false, 
@@ -18,7 +17,6 @@ export async function POST(req: NextRequest) {
       })
     }
     
-    // Validace bundle ID pro security
     if (bundleId !== 'tapp-studio.WallMotion') {
       return NextResponse.json({ 
         valid: false, 
@@ -36,6 +34,14 @@ export async function POST(req: NextRequest) {
       })
     }
     
+    // Kontrola, zda nebylo zařízení odstraněno
+    if (device.isRemoved) {
+      return NextResponse.json({ 
+        valid: false, 
+        reason: 'Device was removed from account. Purchase new license to reactivate.' 
+      })
+    }
+    
     if (!device.isActive) {
       return NextResponse.json({ 
         valid: false, 
@@ -43,7 +49,15 @@ export async function POST(req: NextRequest) {
       })
     }
     
-    // Najít uživatele podle cognitoId
+    // Kontrola, zda je uživatel přihlášen na zařízení
+    if (!device.isLoggedIn) {
+      return NextResponse.json({ 
+        valid: false, 
+        reason: 'Device is logged out. Please sign in again.' 
+      })
+    }
+    
+    // Najít uživatele
     const user = await User.findOne({ cognitoId: device.cognitoId })
     
     if (!user) {
@@ -69,7 +83,6 @@ export async function POST(req: NextRequest) {
       }
     )
     
-    // Return license info
     return NextResponse.json({ 
       valid: true,
       license: {

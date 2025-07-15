@@ -1,3 +1,6 @@
+// Aktualizace Device modelu - přidat nové stavy
+// lib/models/Device.ts
+
 import mongoose, { Schema, Document } from 'mongoose'
 
 export interface IDevice extends Document {
@@ -6,10 +9,13 @@ export interface IDevice extends Document {
   registeredAt: Date
   lastSeen: Date
   isActive: boolean
+  isLoggedIn: boolean  // NOVÉ - zda je uživatel přihlášen
+  isRemoved: boolean   // NOVÉ - zda bylo zařízení odebráno (blocked fingerprint)
   macModel?: string
   macosVersion?: string
   appVersion?: string
   cognitoId: string
+  removedAt?: Date     // NOVÉ - kdy bylo odebráno
 }
 
 const DeviceSchema = new Schema<IDevice>({
@@ -36,6 +42,16 @@ const DeviceSchema = new Schema<IDevice>({
     default: true,
     index: true
   },
+  isLoggedIn: {  // NOVÉ
+    type: Boolean,
+    default: true,
+    index: true
+  },
+  isRemoved: {   // NOVÉ
+    type: Boolean,
+    default: false,
+    index: true
+  },
   macModel: {
     type: String,
     default: null
@@ -53,12 +69,11 @@ const DeviceSchema = new Schema<IDevice>({
     required: true,
     ref: 'User',
     index: true
+  },
+  removedAt: {   // NOVÉ
+    type: Date,
+    default: null
   }
 })
-
-// Odstranění explicitních indexů - jsou už definované v schema s "index: true"
-// DeviceSchema.index({ fingerprint: 1 }) // DUPLIKÁT
-// DeviceSchema.index({ cognitoId: 1 }) // DUPLIKÁT
-// DeviceSchema.index({ isActive: 1 }) // DUPLIKÁT
 
 export default mongoose.models.Device || mongoose.model<IDevice>('Device', DeviceSchema)
