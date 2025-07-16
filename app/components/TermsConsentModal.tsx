@@ -79,7 +79,7 @@ export default function TermsConsentModal({
                 <h3 className="text-amber-800 font-semibold">Important Copyright Notice</h3>
                 <p className="text-amber-700 text-sm mt-1">
                   You are solely responsible for ensuring you have the right to use any video content you process with WallMotion. 
-                  This includes obtaining proper permissions for copyrighted material and complying with YouTubes Terms of Service.
+                  This includes obtaining proper permissions for copyrighted material and complying with YouTube&apos;s Terms of Service.
                 </p>
               </div>
             </div>
@@ -156,11 +156,22 @@ export default function TermsConsentModal({
             <h3 className="font-semibold text-gray-900 mb-2">Your Copyright Responsibilities:</h3>
             <ul className="text-sm text-gray-700 space-y-1">
               <li>• Only use videos you own or have permission to use</li>
-              <li>• Comply with YouTube s Terms of Service when importing videos</li>
-              <li>• Respect content creators intellectual property rights</li>
+              <li>• Comply with YouTube&apos;s Terms of Service when importing videos</li>
+              <li>• Respect content creators&apos; intellectual property rights</li>
               <li>• You are liable for any copyright infringement claims</li>
               <li>• WallMotion is not responsible for your content usage</li>
             </ul>
+          </div>
+
+          {/* Contact Information */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">Questions?</h3>
+            <p className="text-sm text-gray-700">
+              If you have questions about these terms or copyright compliance, contact us at{' '}
+              <a href="mailto:info@tapp-studio.cz" className="text-blue-600 hover:text-blue-800">
+                info@tapp-studio.cz
+              </a>
+            </p>
           </div>
 
           {/* Error Message */}

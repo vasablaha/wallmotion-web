@@ -1,4 +1,4 @@
-// app/page.tsx - Zjednodušený s novými komponenty
+// app/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'

@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -37,8 +38,14 @@ export default function Navbar({ isScrolled, onPurchase }: NavbarProps) {
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">W</span>
+            <div className="w-10 h-10 relative">
+              <Image
+                src="/logo.png"
+                alt="WallMotion Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
             <span className="text-xl font-bold text-gray-900">WallMotion</span>
           </Link>
@@ -106,7 +113,7 @@ export default function Navbar({ isScrolled, onPurchase }: NavbarProps) {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu */}
           <div className="md:hidden">
             {user ? (
               <div className="flex items-center space-x-2">
