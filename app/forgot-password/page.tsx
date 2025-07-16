@@ -158,7 +158,8 @@ export default function ForgotPassword() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  // Added text-black to ensure input text is black
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm text-black"
                   placeholder="your@email.com"
                 />
               </div>
@@ -218,7 +219,8 @@ export default function ForgotPassword() {
                     required
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm text-center text-lg tracking-wider"
+                    // Added text-black to ensure input text is black
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm text-center text-lg tracking-wider text-black"
                     placeholder="Enter 6-digit code"
                     maxLength={6}
                   />
@@ -236,7 +238,8 @@ export default function ForgotPassword() {
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                    // Added text-black to ensure input text is black
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm text-black"
                     placeholder="Create a strong password"
                   />
                   <p className="mt-2 text-xs text-gray-500">
