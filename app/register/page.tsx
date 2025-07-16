@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -121,186 +122,249 @@ export default function Register() {
 
   if (!amplifyReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading authentication system...</p>
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-gray-600 font-medium">Loading authentication system...</p>
         </div>
       </div>
     )
   }
 
+  // Email Verification Step
   if (needsConfirmation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center space-x-3 mb-6">
+              <div className="w-14 h-14 relative">
+                <Image
+                  src="/logo.png"
+                  alt="WallMotion Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">WallMotion</span>
+            </Link>
+            
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Verify Your Email
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </h1>
+            
+            <p className="text-gray-600">
               We sent a verification code to{' '}
-              <span className="font-medium text-blue-600">{email}</span>
+              <span className="font-semibold text-purple-600">{email}</span>
             </p>
           </div>
 
-          <form className="mt-8 space-y-6" onSubmit={handleConfirmSignUp}>
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                Verification Code
-              </label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                required
-                value={confirmationCode}
-                onChange={(e) => setConfirmationCode(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
+          {/* Verification Form */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+            <form onSubmit={handleConfirmSignUp} className="space-y-6">
+              <div>
+                <label htmlFor="code" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  
+                  name="code"
+                  type="text"
+                  required
+                  value={confirmationCode}
+                  onChange={(e) => setConfirmationCode(e.target.value)}
+                  className="w-full px-4 py-3 border text-black border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm text-center text-lg tracking-wider text-black-900"
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                />
               </div>
-            )}
 
-            {success && (
-              <div className="rounded-md bg-green-50 p-4">
-                <div className="text-sm text-green-700">{success}</div>
-              </div>
-            )}
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="text-sm text-red-700 font-medium">{error}</div>
+                </div>
+              )}
 
-            <div>
+              {/* Success Message */}
+              {success && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <div className="text-sm text-green-700 font-medium">{success}</div>
+                </div>
+              )}
+
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
               >
-                {loading ? 'Verifying...' : 'Verify Account'}
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                    Verifying...
+                  </span>
+                ) : (
+                  'Verify Email'
+                )}
               </button>
-            </div>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={handleResendCode}
-                className="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Send new code
-              </button>
-            </div>
-          </form>
+              {/* Resend Code */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
+                >
+                  Didn&quot; receive the code? Resend
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     )
   }
 
+  // Registration Form
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center space-x-3 mb-6">
+            <div className="w-14 h-14 relative">
+              <Image
+                src="/logo.png"
+                alt="WallMotion Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <span className="text-2xl font-bold text-gray-900">WallMotion</span>
+          </Link>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Create Your Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Start using WallMotion for free
+          </h1>
+          
+          <p className="text-gray-600">
+            Join thousands of users creating stunning live wallpapers
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="At least 8 characters"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Password must contain uppercase, lowercase, number and special character
-              </p>
-            </div>
-          </div>
+        {/* Registration Form */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+          <form onSubmit={handleSignUp} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  placeholder="your@email.com"
+                />
+              </div>
 
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  placeholder="Create a strong password"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Must be 8+ characters with uppercase, lowercase, number and special character
+                </p>
+              </div>
             </div>
-          )}
 
-          {success && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="text-sm text-green-700">{success}</div>
-            </div>
-          )}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="text-sm text-red-700 font-medium">{error}</div>
+              </div>
+            )}
 
-          <div>
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="text-sm text-green-700 font-medium">{success}</div>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                  Creating Account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </form>
+            {/* Links */}
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                <span>Already have an account?</span>
+                <Link 
+                  href="/login" 
+                  className="text-purple-600 hover:text-purple-800 font-semibold transition-colors"
+                >
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          </form>
 
-        {/* Terms notice */}
-        <div className="pt-6 border-t border-gray-200">
-          <div className="text-center">
-            <p className="text-xs text-gray-500">
-              By creating an account you agree to our{' '}
-              <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+          {/* Terms Notice */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              By creating an account, you agree to our{' '}
+              <Link href="/terms" className="text-purple-600 hover:text-purple-800 font-medium">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+              <Link href="/privacy" className="text-purple-600 hover:text-purple-800 font-medium">
                 Privacy Policy
               </Link>
             </p>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-500">
+            Protected by industry-standard security • <Link href="/privacy" className="text-purple-600 hover:text-purple-800">Privacy Policy</Link>
+          </p>
         </div>
       </div>
     </div>

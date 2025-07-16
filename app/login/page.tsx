@@ -1,46 +1,37 @@
-// app/login/page.tsx - Upravený pro macOS aplikaci
-
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
-function LoginContent() {
+export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [isFromMacOSApp, setIsFromMacOSApp] = useState(false)
   
-  const { signIn, amplifyReady, user, loading: authLoading } = useAuth()
+  const { signIn, amplifyReady } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  
-  // Check if this is from macOS app
-  const isFromMacOSApp = searchParams.get('app') === 'macos'
 
-  // Check for messages from URL params (like after successful registration)
   useEffect(() => {
     const message = searchParams.get('message')
     if (message) {
-      setSuccess(decodeURIComponent(message))
+      setSuccess(message)
+    }
+    
+    const callback = searchParams.get('callback')
+    if (callback === 'macos') {
+      setIsFromMacOSApp(true)
     }
   }, [searchParams])
 
-  // Redirect if already logged in - but wait for auth to load
-  useEffect(() => {
-    if (authLoading) return
-    
-    // Pouze pro web (ne macOS) - automatické přesměrování
-    if (user && !isFromMacOSApp) {
-      console.log('✅ User already logged in, redirecting to home')
-      router.push('/')
-    }
-  }, [user, authLoading, router, isFromMacOSApp])
-
-const handleMacOSCallback = (userData: { username?: string; [key: string]: unknown }) => {
+  const handleMacOSCallback = (userData: { username: string; [key: string]: unknown }) => {
     console.log('🍎 Handling macOS callback for user:', userData?.username)
     
     const authData = localStorage.getItem('wallmotion_auth')
@@ -121,176 +112,149 @@ const handleMacOSCallback = (userData: { username?: string; [key: string]: unkno
 
   if (!amplifyReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading authentication system...</p>
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-gray-600 font-medium">Loading authentication system...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Header with Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center space-x-3 mb-6">
+            <div className="w-14 h-14 relative">
+              <Image
+                src="/logo.png"
+                alt="WallMotion Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isFromMacOSApp ? 'Sign in to WallMotion' : 'Sign in to your account'}
-          </h2>
-          {isFromMacOSApp ? (
-            <p className="mt-2 text-center text-sm text-blue-600">
-              🍎 Signing in from WallMotion macOS app
-            </p>
-          ) : (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{' '}
-              <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                create a new account
-              </Link>
-            </p>
-          )}
+            <span className="text-2xl font-bold text-gray-900">WallMotion</span>
+          </Link>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {isFromMacOSApp ? 'Sign in to WallMotion' : 'Welcome back'}
+          </h1>
+          
+          <p className="text-gray-600">
+            {isFromMacOSApp 
+              ? 'Sign in to activate your WallMotion license' 
+              : 'Sign in to your account to continue'
+            }
+          </p>
         </div>
 
-        {/* Success/Error Messages */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-md p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-green-700">{success}</p>
+        {/* Login Form */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+          <form onSubmit={handleSignIn} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  placeholder="Enter your password"
+                />
               </div>
             </div>
-          </div>
-        )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex">
+                  <div className="text-sm text-red-700 font-medium">{error}</div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSignIn}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Your password"
-              />
-            </div>
-          </div>
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex">
+                  <div className="text-sm text-green-700 font-medium">{success}</div>
+                </div>
+              </div>
+            )}
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-
-          <div>
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
             >
-              {loading ? 'Signing in...' : (isFromMacOSApp ? 'Sign In to WallMotion' : 'Sign In')}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                  Signing in...
+                </span>
+              ) : (
+                'Sign In'
+              )}
             </button>
-          </div>
 
-          {!isFromMacOSApp && (
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Don&apos;t have an account?{' '}
-                <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                  Create one here
+            {/* Links */}
+            <div className="flex flex-col space-y-3 text-center">
+              <Link 
+                href="/forgot-password" 
+                className="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
+              >
+                Forgot your password?
+              </Link>
+              
+              <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                <span>Don&apos;t have an account?</span>
+                <Link 
+                  href="/register" 
+                  className="text-purple-600 hover:text-purple-800 font-semibold transition-colors"
+                >
+                  Sign up
                 </Link>
-              </p>
+              </div>
             </div>
-          )}
-        </form>
+          </form>
+        </div>
 
-        {/* Additional features info */}
-        {!isFromMacOSApp && (
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                By signing in you agree to our{' '}
-                <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
-                  Privacy Policy
-                </Link>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* macOS App Info */}
-        {isFromMacOSApp && (
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                🍎 You will be redirected back to the WallMotion app after signing in
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-500">
+            Protected by industry-standard security • <Link href="/privacy" className="text-purple-600 hover:text-purple-800">Privacy Policy</Link>
+          </p>
+        </div>
       </div>
     </div>
-  )
-}
-
-function LoginLoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading sign in...</p>
-      </div>
-    </div>
-  )
-}
-
-export default function Login() {
-  return (
-    <Suspense fallback={<LoginLoadingFallback />}>
-      <LoginContent />
-    </Suspense>
   )
 }
