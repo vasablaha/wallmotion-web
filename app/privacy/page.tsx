@@ -1,5 +1,6 @@
 // app/privacy/page.tsx
 "use client"
+import Link from 'next/link'
 import Navbar from '../components/NavBar'
 import Footer from '@/app/components/Footer'
 
@@ -139,15 +140,42 @@ export default function PrivacyPage() {
 
               <h2>9. Cookies and Tracking</h2>
               
-              <h3>9.1 Cookies We Use</h3>
+              <h3>9.1 Types of Cookies We Use</h3>
+              <p>We use Cookiebot to manage cookies and ensure GDPR compliance. The cookies we use include:</p>
               <ul>
-                <li><strong>Essential Cookies:</strong> Required for basic functionality</li>
-                <li><strong>Performance Cookies:</strong> Help us understand how you use the Application</li>
-                <li><strong>Preference Cookies:</strong> Remember your settings and preferences</li>
+                <li><strong>Essential Cookies:</strong> Required for basic functionality (authentication, security, session management)</li>
+                <li><strong>Performance Cookies:</strong> Help us understand how you use the Application (requires consent)</li>
+                <li><strong>Preference Cookies:</strong> Remember your settings and preferences (requires consent)</li>
+                <li><strong>Cookiebot:</strong> Manages your cookie preferences and consent</li>
               </ul>
 
               <h3>9.2 Managing Cookies</h3>
-              <p>You can control cookies through your browser settings or by visiting our Cookie Preferences Center.</p>
+              <p>You can control cookies through several methods:</p>
+              <ul>
+                <li><strong>Cookie Banner:</strong> Make choices when you first visit our website</li>
+                <li><strong>Cookie Settings:</strong> Change preferences anytime by clicking &quot;Cookie Settings&quot; in our footer</li>
+                <li><strong>Browser Settings:</strong> Configure cookies directly in your browser</li>
+                <li><strong>Contact Us:</strong> Email us at info@tapp-studio.cz for assistance</li>
+              </ul>
+
+              <h3>9.3 Third-Party Cookies</h3>
+              <p>We use the following third-party services that may set cookies:</p>
+              <ul>
+                <li><strong>Stripe:</strong> Payment processing (essential for purchases)</li>
+                <li><strong>Google Analytics:</strong> Website analytics (requires consent)</li>
+                <li><strong>AWS:</strong> Authentication and hosting services (essential)</li>
+                <li><strong>Cookiebot:</strong> Cookie consent management (essential for privacy compliance)</li>
+              </ul>
+
+              <h3>9.4 Cookie Consent</h3>
+              <p>We only use non-essential cookies with your explicit consent. You can:</p>
+              <ul>
+                <li>Withdraw consent at any time</li>
+                <li>Choose which categories of cookies to accept</li>
+                <li>View detailed information about each cookie</li>
+              </ul>
+
+              <p>For detailed information about our cookie usage, please see our <Link href="/cookies" className="text-blue-600 hover:text-blue-800">Cookie Policy</Link>.</p>
 
               <h2>10. Updates to This Policy</h2>
               <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by:</p>

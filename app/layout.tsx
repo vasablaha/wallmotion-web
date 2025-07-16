@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from 'next/script'
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext'
 import '@/lib/aws-config' // Import Amplify config
@@ -228,10 +229,39 @@ export default function RootLayout({
         {/* DNS prefetch for external resources */}
         <link rel="dns-prefetch" href="//js.stripe.com" />
         <link rel="dns-prefetch" href="//api.stripe.com" />
+        <link rel="dns-prefetch" href="//consent.cookiebot.com" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Cookiebot - Must be loaded before any other scripts */}
+        <Script
+          id="cookiebot"
+          src="https://consent.cookiebot.com/uc.js"
+          data-cbid="499ebeaf-a62d-4431-b390-02d3b35feede"
+          data-blockingmode="auto"
+          strategy="beforeInteractive"
+        />
+        
+        {/* Google Analytics (will be blocked by Cookiebot until consent) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"
+          strategy="afterInteractive"
+          data-cookieconsent="statistics"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          data-cookieconsent="statistics"
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'GA_MEASUREMENT_ID');
+          `}
+        </Script>
+        
         <AuthProvider>
           {children}
         </AuthProvider>

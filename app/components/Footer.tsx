@@ -5,7 +5,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { EnvelopeIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 
+// Type for Cookiebot global object
+declare global {
+  interface Window {
+    Cookiebot?: {
+      renew: () => void
+    }
+  }
+}
+
 export default function Footer() {
+  const handleCookieSettings = () => {
+    // Cookiebot automaticky poskytne dialog pro změnu nastavení
+    if (typeof window !== 'undefined' && window.Cookiebot) {
+      window.Cookiebot.renew()
+    }
+  }
+
   return (
     <footer className="bg-gray-900 text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,7 +40,8 @@ export default function Footer() {
               <span className="text-xl font-bold">WallMotion</span>
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
-              Turn any video into a stunning live wallpaper for macOS. Simple drag & drop interface with smart replacement technology.
+              Turn any video into a stunning live wallpaper for macOS. 
+              Simple drag & drop interface with smart replacement technology.
             </p>
             <div className="flex items-center space-x-2 text-gray-400 mb-4">
               <GlobeAltIcon className="w-4 h-4" />
@@ -58,6 +75,14 @@ export default function Footer() {
               <li><Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link></li>
               <li><Link href="/dmca" className="hover:text-white transition-colors">DMCA Policy</Link></li>
               <li><Link href="/cookies" className="hover:text-white transition-colors">Cookie Policy</Link></li>
+              <li>
+                <button 
+                  onClick={handleCookieSettings}
+                  className="hover:text-white transition-colors text-left"
+                >
+                  Cookie Settings
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -79,16 +104,24 @@ export default function Footer() {
             <div className="text-gray-500 text-sm">
               © 2025 Tapp Studio. All rights reserved.
             </div>
-            <div className="flex items-center space-x-6 text-gray-500 text-sm">
-              <span>Made with ❤️ for Mac users worldwide</span>
-              <a href="mailto:info@tapp-studio.cz" className="hover:text-white transition-colors">
-                Contact
-              </a>
+            <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-500">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms
+              </Link>
+              <Link href="/cookies" className="hover:text-white transition-colors">
+                Cookies
+              </Link>
+              <button 
+                onClick={handleCookieSettings}
+                className="hover:text-white transition-colors"
+              >
+                Cookie Settings
+              </button>
             </div>
           </div>
-
-          {/* Important Legal Notice */}
-          
         </div>
       </div>
     </footer>
