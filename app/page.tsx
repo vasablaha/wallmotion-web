@@ -130,7 +130,6 @@ export default function HomePage() {
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#features" className="hover:text-white">Features</a></li>
                 <li><a href="#gallery" className="hover:text-white">Gallery</a></li>
-                <li><a href="#testimonials" className="hover:text-white">Reviews</a></li>
                 <li><a href="/download" className="hover:text-white">Download</a></li>
               </ul>
             </div>
