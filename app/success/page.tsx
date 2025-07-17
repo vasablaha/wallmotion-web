@@ -42,7 +42,7 @@ function SuccessContent() {
         
         <div className="space-y-4">
           <a 
-            href={process.env.NEXT_PUBLIC_DOWNLOAD_URL}
+            href={process.env.DOWNLOAD_URL}
             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:shadow-lg transition-all"
           >
             <ArrowDownTrayIcon className="w-5 h-5" />
