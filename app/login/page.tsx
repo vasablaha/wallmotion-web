@@ -25,9 +25,13 @@ function LoginContent() {
       setSuccess(message)
     }
     
-    const callback = searchParams.get('callback')
-    if (callback === 'macos') {
+    // Kontrola zda se jedná o macOS aplikaci - podporuje jak 'app=macos' tak 'callback=macos'
+    const appParam = searchParams.get('app')
+    const callbackParam = searchParams.get('callback')
+    
+    if (appParam === 'macos' || callbackParam === 'macos') {
       setIsFromMacOSApp(true)
+      console.log('🍎 Detected macOS app request')
     }
   }, [searchParams])
 
@@ -45,9 +49,38 @@ function LoginContent() {
         
         setSuccess('Sign in successful! Redirecting to WallMotion app...')
         
+        // Metoda 1: Přímé přesměrování
         setTimeout(() => {
           window.location.href = callbackURL
         }, 1500)
+        
+        // Metoda 2: Fallback pro některé prohlížeče
+        setTimeout(() => {
+          const link = document.createElement('a')
+          link.href = callbackURL
+          link.click()
+          link.remove()
+        }, 1700)
+        
+        // Metoda 3: Další fallback
+        setTimeout(() => {
+          try {
+            window.open(callbackURL, '_self')
+          } catch (e) {
+            console.warn('⚠️ Window.open fallback failed:', e)
+          }
+        }, 1900)
+        
+        // Pokus o zavření okna po úspěšném redirectu (pro macOS app)
+        setTimeout(() => {
+          try {
+            window.close()
+          } catch (e) {
+            console.warn('⚠️ Could not close window:', e)
+            // Zobraz instrukce uživateli
+            setSuccess('Authentication successful! You can now close this window and return to the WallMotion app.')
+          }
+        }, 3000)
         
       } catch (error) {
         console.error('❌ Error parsing auth data:', error)
@@ -156,6 +189,27 @@ function LoginContent() {
         {/* Login Form */}
         <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-xl">
           <form onSubmit={handleSignIn} className="space-y-6">
+            {/* Additional macOS app notice */}
+            {isFromMacOSApp && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-blue-800">
+                      You are signing in from the WallMotion macOS app
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      This window will close automatically after successful login
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Email Input */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -230,32 +284,44 @@ function LoginContent() {
 
             {/* Links */}
             <div className="flex flex-col space-y-3 text-center">
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
-              >
-                Forgot your password?
-              </Link>
+              {!isFromMacOSApp && (
+                <>
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
+                  >
+                    Forgot your password?
+                  </Link>
+                  
+                  <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                    <span>Don&apos;t have an account?</span>
+                    <Link 
+                      href="/register" 
+                      className="text-purple-600 hover:text-purple-800 font-semibold transition-colors"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </>
+              )}
               
-              <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                <span>Don&apos;t have an account?</span>
-                <Link 
-                  href="/register" 
-                  className="text-purple-600 hover:text-purple-800 font-semibold transition-colors"
-                >
-                  Sign up
-                </Link>
-              </div>
+              {isFromMacOSApp && (
+                <div className="text-sm text-gray-600">
+                  <p>Need help? Visit our website at <span className="font-medium text-purple-600">wallmotion.eu</span></p>
+                </div>
+              )}
             </div>
           </form>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">
-            Protected by industry-standard security • <Link href="/privacy" className="text-purple-600 hover:text-purple-800">Privacy Policy</Link>
-          </p>
-        </div>
+        {!isFromMacOSApp && (
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500">
+              Protected by industry-standard security • <Link href="/privacy" className="text-purple-600 hover:text-purple-800">Privacy Policy</Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
