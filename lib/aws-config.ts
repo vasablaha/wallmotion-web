@@ -17,17 +17,6 @@ const awsConfig = {
 
 // Initialize Amplify synchronously
 Amplify.configure(awsConfig)
-console.log('✅ AWS Amplify configured successfully')
-console.log('📋 Config (secret hidden):', {
-  ...awsConfig,
-  Auth: {
-    ...awsConfig.Auth,
-    Cognito: {
-      ...awsConfig.Auth.Cognito,
-      userPoolClientSecret: awsConfig.Auth.Cognito.userPoolClientSecret ? '***HIDDEN***' : 'MISSING'
-    }
-  }
-})
 
 // Export initialization promise for components to wait for
 export const amplifyReady = Promise.resolve(true)
