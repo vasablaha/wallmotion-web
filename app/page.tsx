@@ -49,7 +49,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <Navbar isScrolled={isScrolled} onPurchase={handlePurchase} />
       <HeroSection onPurchase={handlePurchase} />
-      <WallpaperShowcase />
+      <WallpaperShowcase onPurchase={handlePurchase} />
       <FeaturesSection />
       <VideoGallery />
 

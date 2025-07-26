@@ -8,6 +8,10 @@ interface VideoItem {
   title: string
 }
 
+interface WallpaperShowcaseProps {
+  onPurchase?: () => void | Promise<void>
+}
+
 // Generujeme 20 video placeholders s reálnými názvy souborů
 const videos: VideoItem[] = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
@@ -85,7 +89,7 @@ function VideoCard({ video }: { video: VideoItem }) {
   )
 }
 
-export default function WallpaperShowcase() {
+export default function WallpaperShowcase({ onPurchase }: WallpaperShowcaseProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -118,6 +122,20 @@ export default function WallpaperShowcase() {
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % videos.length)
+  }
+
+  const handlePurchaseClick = async () => {
+    console.log('Purchase button clicked!')
+    if (onPurchase) {
+      await onPurchase()
+    } else {
+      // Fallback akce pokud není onPurchase předán
+      alert('Purchase functionality needs to be connected!')
+    }
+  }
+
+  const getPurchaseButtonText = () => {
+    return 'Get WallMotion for $15'
   }
 
   return (
@@ -185,6 +203,24 @@ export default function WallpaperShowcase() {
             {videos.length > 10 && (
               <div className="text-gray-400 text-xs">...</div>
             )}
+          </div>
+        </div>
+
+        {/* Purchase Button Section */}
+        <div className="text-center mt-16">
+          <div className="max-w-md mx-auto">
+            
+            
+            <button
+              onClick={handlePurchaseClick}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-8 rounded-2xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+            >
+              {getPurchaseButtonText()}
+            </button>
+            
+            <p className="text-sm text-gray-500 mt-4">
+              ✅ Lifetime licence • ✅ 30-day money-back guarantee • ✅ Secure payment via Stripe
+            </p>
           </div>
         </div>
       </div>
