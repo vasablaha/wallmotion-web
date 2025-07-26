@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import Navbar from './components/NavBar'
 import Footer from './components/Footer'
 import HeroSection from './components/HeroSection'
+import WallpaperShowcase from './components/WallPaperShowCase'
 import FeaturesSection from './components/FeaturesSection'
 import VideoGallery from './components/VideoGallery'
 import ProfileModal from './components/ProfileModal'
@@ -48,6 +49,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <Navbar isScrolled={isScrolled} onPurchase={handlePurchase} />
       <HeroSection onPurchase={handlePurchase} />
+      <WallpaperShowcase />
       <FeaturesSection />
       <VideoGallery />
 
