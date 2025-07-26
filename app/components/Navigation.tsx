@@ -25,7 +25,7 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
   const getPurchaseButtonText = () => {
     if (authLoading) return 'Loading...'
     if (user) return 'My Profile'
-    return 'Buy Now - $10'
+    return 'Buy Now - $15'
   }
 
   return (
@@ -44,7 +44,7 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
             <span className="text-xl font-bold text-gray-900">WallMotion</span>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Navigation Links - REMOVED Download link */}
           <div className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-gray-700 hover:text-purple-600 transition-colors font-medium">
               Features
@@ -128,7 +128,7 @@ export default function Navigation({ isScrolled, onPurchase }: NavigationProps) 
                   disabled={authLoading}
                   className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {authLoading ? 'Loading' : 'Buy $10'}
+                  {authLoading ? 'Loading' : 'Buy $15'}
                 </button>
               </div>
             )}

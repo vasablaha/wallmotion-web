@@ -59,7 +59,7 @@ export default function HomePage() {
               Simple, One-Time Payment
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Get lifetime access to WallMotion for just $10. No subscriptions, no hidden fees.
+              Get lifetime access to WallMotion for just $15. No subscriptions, no hidden fees.
             </p>
           </div>
 
@@ -69,7 +69,7 @@ export default function HomePage() {
                 <CheckIcon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Lifetime License</h3>
-              <div className="text-4xl font-bold text-purple-600 mb-2">$10</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">$15</div>
               <p className="text-gray-600">One-time payment, lifetime access</p>
             </div>
 
@@ -106,7 +106,7 @@ export default function HomePage() {
               ) : user ? (
                 'Go to My Profile'
               ) : (
-                'Get WallMotion for $10'
+                'Get WallMotion for $15'
               )}
             </button>
             <p className="text-sm text-gray-500 mt-4 text-center">

@@ -327,12 +327,12 @@ async function sendLicenseConfirmationEmail(data: {
           
           <div class="receipt-row">
             <span style="color: #64748b;">Unit Price:</span>
-            <span style="font-weight: 500;">$10.00 USD</span>
+            <span style="font-weight: 500;">$15.00 USD</span>
           </div>
           
           <div class="receipt-row total">
             <span style="color: #1e293b;">Total Paid:</span>
-            <span style="color: #059669; font-size: 20px;">$10.00 USD</span>
+            <span style="color: #059669; font-size: 20px;">$15.00 USD</span>
           </div>
           
           <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
@@ -439,8 +439,8 @@ Customer Email: ${email}
 Product: WallMotion License (1 Device)
 License Type: Lifetime License
 Quantity: 1
-Unit Price: $10.00 USD
-Total Paid: $10.00 USD
+Unit Price: $15.00 USD
+Total Paid: $15.00 USD
 Payment Status: COMPLETED
 
 ${licenseText}

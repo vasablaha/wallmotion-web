@@ -55,14 +55,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Product Links - REMOVED Download link */}
           <div>
             <h3 className="font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-gray-400">
               <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
               <li><a href="#gallery" className="hover:text-white transition-colors">Gallery</a></li>
               <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-              <li><Link href="/download" className="hover:text-white transition-colors">Download</Link></li>
             </ul>
           </div>
 
