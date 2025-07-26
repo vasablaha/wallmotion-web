@@ -19,6 +19,11 @@ export interface IVersion extends Document {
   updatedAt: Date
 }
 
+interface IVersionModel extends mongoose.Model<IVersion> {
+  getLatestVersion(bundleId: string, channel?: string): Promise<IVersion | null>
+  compareVersions(version1: string, version2: string): number
+}
+
 const VersionSchema = new Schema<IVersion>({
   version: {
     type: String,
@@ -149,14 +154,15 @@ VersionSchema.statics.compareVersions = function(version1: string, version2: str
 
 // Instance method pro kontrolu, zda je verze novější než zadaná
 VersionSchema.methods.isNewerThan = function(compareVersion: string): boolean {
-  const VersionModel = this.constructor as any
+  const VersionModel = mongoose.model<IVersion, IVersionModel>('Version')
   return VersionModel.compareVersions(this.version, compareVersion) > 0
 }
 
 // Instance method pro kontrolu kompatibility
 VersionSchema.methods.isCompatibleWith = function(currentVersion: string): boolean {
-  const VersionModel = this.constructor as any
+  const VersionModel = mongoose.model<IVersion, IVersionModel>('Version')
   return VersionModel.compareVersions(currentVersion, this.minimumVersion) >= 0
 }
 
-export default mongoose.models.Version || mongoose.model<IVersion>('Version', VersionSchema)
+
+export default (mongoose.models.Version as IVersionModel) || mongoose.model<IVersion, IVersionModel>('Version', VersionSchema)
